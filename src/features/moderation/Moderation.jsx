@@ -1,30 +1,65 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ShieldAlert, CheckCircle, Trash2, ArrowRight } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { plainteApi } from '../../api/client';
 import styles from './Moderation.module.css';
 
-const MOCK_REPORTS = [
-    { id: 1, type: 'Arnaque', date: '08/03/2026', reporter: 'Youssef B.', reported: 'Khalid M.', subject: 'Livre non reçu après virement', status: 'Pending', severity: 'High' },
-    { id: 2, type: 'Contenu', date: '07/03/2026', reporter: 'Fatima Zahra F.', reported: 'Mehdi R.', subject: 'Photos inappropriées sur l\'annonce #103', status: 'Resolved', severity: 'Medium' },
-    { id: 3, type: 'Harcèlement', date: '06/03/2026', reporter: 'Sofia K.', reported: 'Omar L.', subject: 'Langage agressif dans les messages', status: 'Pending', severity: 'High' },
-    { id: 4, type: 'Qualité', date: '06/03/2026', reporter: 'Hassan D.', reported: 'Wafae B.', subject: 'Livre fortement surligné contrairement à l\'annonce', status: 'Pending', severity: 'Low' },
-    { id: 5, type: 'Prix', date: '05/03/2026', reporter: 'Amine El Amrani', reported: 'Salma J.', subject: 'Prix différent lors du rendez-vous réel', status: 'Pending', severity: 'Medium' },
-    { id: 6, type: 'No-Show', date: '05/03/2026', reporter: 'Khadija Bennani', reported: 'Ahmed S.', subject: 'Ne s\'est pas présenté au point de rendez-vous sur le campus', status: 'Pending', severity: 'Medium' },
-    { id: 7, type: 'Fake', date: '04/03/2026', reporter: 'Zineb C.', reported: 'Imane O.', subject: 'Faux manuel photocopié (Interdit)', status: 'Pending', severity: 'High' },
-    { id: 8, type: 'Comportement', date: '04/03/2026', reporter: 'Rachid L.', reported: 'Meryem Z.', subject: 'Comportement irrespectueux lors de l\'échange', status: 'Pending', severity: 'Medium' },
-    { id: 9, type: 'Vandalisme', date: '03/03/2026', reporter: 'Anas I.', reported: 'Yassir B.', subject: 'Pages manquantes dans le tome 2 d\'Anatomie', status: 'Pending', severity: 'High' },
-    { id: 10, type: 'Usurpation', date: '03/03/2026', reporter: 'Sara Z.', reported: 'Mehdi T.', subject: 'Utilise la photo de profil d\'un autre étudiant', status: 'Pending', severity: 'Medium' },
-];
-
 export default function Moderation() {
-    const [reports, setReports] = useState(MOCK_REPORTS);
+    const [reports, setReports] = useState([]);
     const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
+    const [isLoading, setIsLoading] = useState(true);
 
-    const resolveReport = (id) => {
-        setReports(reports.map(r => r.id === id ? { ...r, status: 'Resolved' } : r));
+    const loadReports = async () => {
+        try {
+            const response = await plainteApi.getAll();
+            
+            const typeMap = {
+                'COMPORTEMENT': 'Comportement',
+                'FRAUDE': 'Fraude',
+                'LIVRE_NON_CONFORME': 'Non Conforme',
+                'RETARD_RETOUR': 'Retard',
+                'AUTRE': 'Autre'
+            };
+
+            // Map DB format to the UI format expected by Moderation styles
+            const formatted = response.data.map(r => ({
+                id: r.id,
+                type: typeMap[r.type] || r.type,
+                date: new Date(r.created_at).toLocaleDateString(),
+                reporter: r.plaignant_nom || 'Utilisateur inconnu',
+                reported: r.concerne_id || 'System/Inconnu', // Optional in our DB, defaulting for UI
+                subject: r.sujet,
+                status: r.status === 'RESOLU' ? 'Resolved' : 'Pending',
+                severity: r.type === 'FRAUDE' || r.type === 'COMPORTEMENT' ? 'High' : 'Medium' 
+            }));
+            
+            setReports(formatted);
+        } catch (error) {
+            toast.error("Échec du chargement des plaintes.");
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadReports();
+    }, []);
+
+    const resolveReport = async (id) => {
+        try {
+            await plainteApi.updateStatus(id, 'RESOLU');
+            setReports(reports.map(r => r.id === id ? { ...r, status: 'Resolved' } : r));
+            toast.success("Plainte marquée comme résolue.");
+        } catch (err) {
+            toast.error("Erreur lors de la mise à jour.");
+        }
     };
 
     const deleteReport = (id) => {
+        // Technically hide it or map it to another DB column if we add physical delete
         setReports(reports.filter(r => r.id !== id));
+        toast.success("Signalement archivé de l'historique.");
     };
 
     const displayedReports = reports.filter(r =>

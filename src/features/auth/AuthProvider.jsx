@@ -1,29 +1,31 @@
 import { useState, useEffect } from 'react';
 import { AuthContext } from './AuthContext';
+import { authApi } from '../../api/client';
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Validation simulée du token au montage avec petit effet de délai visuel
         const verifyToken = async () => {
             const token = localStorage.getItem('token');
-            const role = localStorage.getItem('user_role');
-            const storedAvatar = localStorage.getItem('user_avatar');
-            const storedName = localStorage.getItem('user_name');
-
-            await new Promise(r => setTimeout(r, 1000)); // Simuler la latence réseau
-
-            if (token && role) {
-                // Normalize role if it's 'ETUDIANT' to 'STUDENT'
-                const normalizedRole = role === 'ETUDIANT' ? 'STUDENT' : role;
-                // Hydrate the user
-                setUser({
-                    role: normalizedRole,
-                    name: storedName || (normalizedRole === 'ADMIN' ? 'Admin yTera' : 'Hiba Filali'),
-                    avatar: storedAvatar || 'https://i.pravatar.cc/150?u=admin'
-                });
+            if (token) {
+                try {
+                    const response = await authApi.getMe();
+                    const userData = response.data;
+                    const normalizedRole = userData.role === 'ETUDIANT' ? 'STUDENT' : userData.role;
+                    
+                    setUser({
+                        ...userData,
+                        id: userData.id,
+                        role: normalizedRole,
+                        name: userData.nom,
+                        avatar: userData.avatarUrl || `https://ui-avatars.com/api/?name=${userData.nom}&background=random`
+                    });
+                } catch (error) {
+                    console.error('Verify token error:', error);
+                    logout();
+                }
             }
             setLoading(false);
         };
@@ -40,30 +42,52 @@ export function AuthProvider({ children }) {
         setUser(prev => prev ? { ...prev, name: newName } : null);
     };
 
-    const login = async (email, password, role) => {
-        // Simuler latence de login
-        await new Promise(r => setTimeout(r, 1200));
-
-        if (role === 'ADMIN' && email === 'admin@ytera.ma' && password === 'admin') {
-            localStorage.setItem('token', 'fake-admin-jwt-token');
-            localStorage.setItem('user_role', 'ADMIN');
-            const avatar = localStorage.getItem('user_avatar') || 'https://i.pravatar.cc/150?u=admin';
-            const name = localStorage.getItem('user_name') || 'Admin yTera';
-            setUser({ role: 'ADMIN', name, avatar });
+    const login = async (email, password) => {
+        try {
+            const response = await authApi.login({ email, password });
+            const { token, user: userData } = response.data;
+            
+            localStorage.setItem('token', token);
+            localStorage.setItem('user_role', userData.role);
+            
+            const normalizedRole = userData.role === 'ETUDIANT' ? 'STUDENT' : userData.role;
+            const userObj = {
+                ...userData,
+                role: normalizedRole,
+                name: userData.nom,
+                avatar: userData.avatar || `https://ui-avatars.com/api/?name=${userData.nom}&background=random`
+            };
+            
+            setUser(userObj);
             return true;
+        } catch (error) {
+            console.error('Login error:', error);
+            throw error;
         }
+    };
 
-        // Mock pour authentifier un étudiant
-        if (role === 'STUDENT' && email && password) {
-            localStorage.setItem('token', 'fake-student-jwt-token');
-            localStorage.setItem('user_role', 'STUDENT');
-            const avatar = localStorage.getItem('user_avatar') || 'https://i.pravatar.cc/120?u=hiba';
-            const name = localStorage.getItem('user_name') || 'Hiba Filali';
-            setUser({ role: 'STUDENT', name, avatar });
+    const register = async (formData) => {
+        try {
+            const response = await authApi.register(formData);
+            const { token, user: userData } = response.data;
+            
+            localStorage.setItem('token', token);
+            localStorage.setItem('user_role', userData.role);
+            
+            const normalizedRole = userData.role === 'ETUDIANT' ? 'STUDENT' : userData.role;
+            const userObj = {
+                ...userData,
+                role: normalizedRole,
+                name: userData.nom,
+                avatar: userData.avatarUrl || `https://ui-avatars.com/api/?name=${userData.nom}&background=random`
+            };
+            
+            setUser(userObj);
             return true;
+        } catch (error) {
+            console.error('Register error:', error);
+            throw error;
         }
-
-        return false;
     };
 
     const logout = () => {
@@ -73,7 +97,7 @@ export function AuthProvider({ children }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, updateAvatar, updateName, isAuthenticated: !!user, loading }}>
+        <AuthContext.Provider value={{ user, login, register, logout, updateAvatar, updateName, isAuthenticated: !!user, loading }}>
             {children}
         </AuthContext.Provider>
     );

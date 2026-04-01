@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Lock, Building2, MapPin, GraduationCap, ArrowRight, Loader2 } from 'lucide-react';
+import { useAuth } from './useAuth';
 import { toast } from 'react-hot-toast';
 import styles from './Register.module.css';
 import YTeraLogo from '../../components/common/YTeraLogo';
 
 export default function Register() {
     const navigate = useNavigate();
+    const { register } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
         nom: '', prenom: '', email: '',
@@ -50,12 +52,24 @@ export default function Register() {
         if (!validateForm()) return;
 
         setIsLoading(true);
-        // Simulate API call for user registration
-        await new Promise(r => setTimeout(r, 1500));
-        setIsLoading(false);
-
-        toast.success("Bienvenue dans la communauté ! Redirection vers la page de connexion...", { duration: 4000 });
-        navigate('/login');
+        try {
+            await register({
+                nom: `${formData.prenom} ${formData.nom}`,
+                email: formData.email,
+                password: formData.password,
+                filiere: formData.filiere,
+                etablissement: formData.etablissement,
+                ville: formData.ville,
+                role: 'ETUDIANT'
+            });
+            toast.success("Bienvenue dans la communauté ! Votre compte a été créé.", { duration: 4000 });
+            navigate('/student-dashboard');
+        } catch (err) {
+            const msg = err.response?.data?.error || "Erreur lors de l'inscription.";
+            toast.error(msg);
+        } finally {
+            setIsLoading(false);
+        }
     };
     return (
         <div className={styles.page}>

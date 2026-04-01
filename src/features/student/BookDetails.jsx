@@ -7,7 +7,8 @@ import {
     ChevronLeft, ChevronRight, MessageCircle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { ALL_BOOKS, TYPE_COLORS, ETAT_LABELS, ETAT_COLORS } from '../../data/mockBooks';
+import { bookApi } from '../../api/client';
+import { TYPE_COLORS, ETAT_LABELS, ETAT_COLORS } from '../../data/mockBooks';
 import ManualCard from './ManualCard';
 import styles from './BookDetails.module.css';
 
@@ -33,20 +34,49 @@ const fadeUp = { hidden: { opacity: 0, y: 25 }, visible: { opacity: 1, y: 0, tra
 export default function BookDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const [book, setBook] = useState(null);
+    const [allBooks, setAllBooks] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [selectedPhoto, setSelectedPhoto] = useState(0);
     const [isFav, setIsFav] = useState(false);
     const [showContact, setShowContact] = useState(false);
     const [contactMsg, setContactMsg] = useState('');
     const [contactSent, setContactSent] = useState(false);
 
-    const book = ALL_BOOKS.find(b => b.id === parseInt(id)) || ALL_BOOKS[0];
-    const typeConf = TYPE_CONFIG[book.typeEchange];
-    const etatConf = ETAT_CONFIG[book.etat];
-    const isTrusted = book.proprietaire.nbEchanges >= 3;
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setIsLoading(true);
+                const [bookRes, allRes] = await Promise.all([
+                    bookApi.getById(id),
+                    bookApi.getAll()
+                ]);
+                setBook(bookRes.data);
+                setAllBooks(allRes.data);
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+                toast.error('Livre introuvable');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
+    }, [id]);
 
-    const similarBooks = ALL_BOOKS.filter(b => b.id !== book.id && b.filiere === book.filiere).slice(0, 6);
+    if (isLoading) return <div className={styles.loading}>Chargement...</div>;
+    if (!book) return <div className={styles.error}>Livre introuvable</div>;
+
+    const typeConf = TYPE_CONFIG[book.typeEchange];
+    const etatConf = ETAT_CONFIG[book.exemplaire?.etat];
+    const isTrusted = book.exemplaire?.proprietaire?.nbEchanges >= 3;
+
+    // We only have one photoUrl in DB for now as per schema, so we'll wrap it in array
+    const photos = book.photos || [book.exemplaire?.photoUrl || book.photoUrl].filter(Boolean);
+
+    // Filter by same category or filiere
+    const similarBooks = allBooks.filter(b => b.id !== book.id && b.exemplaire?.ouvrage?.categorie?.label === book.exemplaire?.ouvrage?.categorie?.label).slice(0, 6);
     if (similarBooks.length < 6) {
-        ALL_BOOKS.filter(b => b.id !== book.id && !similarBooks.find(s => s.id === b.id))
+        allBooks.filter(b => b.id !== book.id && !similarBooks.find(s => s.id === b.id))
             .slice(0, 6 - similarBooks.length)
             .forEach(b => similarBooks.push(b));
     }
@@ -62,8 +92,8 @@ export default function BookDetails() {
         setTimeout(() => { setShowContact(false); setContactSent(false); setContactMsg(''); }, 2000);
     };
 
-    const nextPhoto = () => setSelectedPhoto(p => (p + 1) % book.photos.length);
-    const prevPhoto = () => setSelectedPhoto(p => (p - 1 + book.photos.length) % book.photos.length);
+    const nextPhoto = () => setSelectedPhoto(p => (p + 1) % photos.length);
+    const prevPhoto = () => setSelectedPhoto(p => (p - 1 + photos.length) % photos.length);
 
     return (
         <div className={styles.page}>
@@ -79,8 +109,8 @@ export default function BookDetails() {
                 {/* ——— LEFT: Gallery ——— */}
                 <motion.div className={styles.gallery} variants={fadeUp}>
                     <div className={styles.manualWrapper}>
-                        <img src={book.photos[selectedPhoto]} alt={book.titreAnnonce} className={styles.manualCover} />
-                        {book.photos.length > 1 && (
+                        <img src={photos[selectedPhoto]} alt={book.exemplaire?.ouvrage?.titre} className={styles.manualCover} />
+                        {photos.length > 1 && (
                             <>
                                 <button className={`${styles.navBtn} ${styles.navLeft}`} onClick={prevPhoto}><ChevronLeft size={20} /></button>
                                 <button className={`${styles.navBtn} ${styles.navRight}`} onClick={nextPhoto}><ChevronRight size={20} /></button>
@@ -88,9 +118,9 @@ export default function BookDetails() {
                         )}
                         <div className={styles.typeRibbon} style={{ background: typeConf.gradient }}>{typeConf.label}</div>
                     </div>
-                    {book.photos.length > 1 && (
+                    {photos.length > 1 && (
                         <div className={styles.thumbnails}>
-                            {book.photos.map((p, i) => (
+                            {photos.map((p, i) => (
                                 <button key={i} className={`${styles.thumb} ${i === selectedPhoto ? styles.thumbActive : ''}`}
                                     onClick={() => setSelectedPhoto(i)}>
                                     <img src={p} alt={`Photo ${i + 1}`} />
@@ -105,11 +135,11 @@ export default function BookDetails() {
                     {/* Title block */}
                     <motion.div className={styles.titleBlock} variants={fadeUp}>
                         <div className={styles.badges}>
-                            <span className={styles.etatBadge} style={{ background: etatConf.color }}>{etatConf.label}</span>
+                            <span className={styles.etatBadge} style={{ background: etatConf?.color }}>{etatConf?.label}</span>
                             <span className={styles.viewsBadge}><Eye size={13} /> {book.nbVues} vues</span>
                         </div>
-                        <h1 className={styles.title}>{book.titreAnnonce}</h1>
-                        <p className={styles.author}>{book.auteur}</p>
+                        <h1 className={styles.title}>{book.exemplaire?.ouvrage?.titre || 'Annonce'}</h1>
+                        <p className={styles.author}>{book.exemplaire?.ouvrage?.auteur}</p>
                         <div className={styles.priceRow}>
                             <span className={styles.price} style={{ color: typeConf.color }}>{priceLabel}</span>
                             <div className={styles.actionBtns}>
@@ -134,10 +164,10 @@ export default function BookDetails() {
                     <motion.div className={styles.detailsCard} variants={fadeUp}>
                         <h3 className={styles.cardLabel}>Caractéristiques</h3>
                         <div className={styles.detailsGrid}>
-                            <div className={styles.detailItem}><Hash size={16} /><div><span>ISBN</span><strong>{book.isbn}</strong></div></div>
-                            <div className={styles.detailItem}><Layers size={16} /><div><span>État</span><strong>{etatConf.label}</strong></div></div>
-                            <div className={styles.detailItem}><GraduationCap size={16} /><div><span>Filière</span><strong>{book.filiere}</strong></div></div>
-                            <div className={styles.detailItem}><MapPin size={16} /><div><span>Ville</span><strong>{book.ville}</strong></div></div>
+                            <div className={styles.detailItem}><Hash size={16} /><div><span>ISBN</span><strong>{book.exemplaire?.ouvrage?.isbn}</strong></div></div>
+                            <div className={styles.detailItem}><Layers size={16} /><div><span>État</span><strong>{etatConf?.label}</strong></div></div>
+                            <div className={styles.detailItem}><GraduationCap size={16} /><div><span>Catégorie</span><strong>{book.exemplaire?.ouvrage?.categorie?.label}</strong></div></div>
+                            <div className={styles.detailItem}><MapPin size={16} /><div><span>Campus</span><strong>{book.exemplaire?.proprietaire?.ville}</strong></div></div>
                         </div>
                     </motion.div>
 
@@ -152,22 +182,22 @@ export default function BookDetails() {
                         <h3 className={styles.cardLabel}>Propriétaire</h3>
                         <div
                             className={styles.ownerInfo}
-                            onClick={() => navigate(`/student-dashboard/user/${slugify(book.proprietaire.nom)}`)}
+                            onClick={() => navigate(`/student-dashboard/user/${slugify(book.exemplaire?.proprietaire?.nom || '')}`)}
                             style={{ cursor: 'pointer' }}
                             title="Voir le profil du vendeur"
                         >
-                            <div className={styles.ownerAvatar} style={{ background: typeConf.color }}>
-                                {book.proprietaire.nom.charAt(0)}
+                            <div className={styles.ownerAvatar} style={{ background: typeConf?.color }}>
+                                {book.exemplaire?.proprietaire?.nom?.charAt(0)}
                             </div>
                             <div className={styles.ownerDetails}>
-                                <strong>{book.proprietaire.nom}</strong>
+                                <strong>{book.exemplaire?.proprietaire?.nom}</strong>
                                 {isTrusted && (
-                                    <span className={styles.trustBadge}><ShieldCheck size={12} /> Vérifié · {book.proprietaire.nbEchanges} échanges</span>
+                                    <span className={styles.trustBadge}><ShieldCheck size={12} /> Vérifié · {book.exemplaire?.proprietaire?.nbEchanges} échanges</span>
                                 )}
                                 <div className={styles.ownerMeta}>
-                                    <span><GraduationCap size={13} /> {book.proprietaire.filiere}</span>
-                                    <span><Building2 size={13} /> {book.proprietaire.etablissement}</span>
-                                    <span><MapPin size={13} /> {book.proprietaire.ville}</span>
+                                    <span><GraduationCap size={13} /> {book.exemplaire?.proprietaire?.filiere}</span>
+                                    <span><Building2 size={13} /> {book.exemplaire?.proprietaire?.etablissement}</span>
+                                    <span><MapPin size={13} /> {book.exemplaire?.proprietaire?.ville}</span>
                                 </div>
                             </div>
                         </div>
@@ -200,9 +230,9 @@ export default function BookDetails() {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         transition={{ duration: 0.25 }}>
                         <button className={styles.modalClose} onClick={() => setShowContact(false)}><X size={20} /></button>
-                        <div className={styles.modalIcon} style={{ background: typeConf.color }}><MessageCircle size={28} /></div>
-                        <h3>Contacter {book.proprietaire.nom}</h3>
-                        <p>Envoyez un message à propos de "{book.titreAnnonce}"</p>
+                        <div className={styles.modalIcon} style={{ background: typeConf?.color }}><MessageCircle size={28} /></div>
+                        <h3>Contacter {book.exemplaire?.proprietaire?.nom}</h3>
+                        <p>Envoyez un message à propos de "{book.exemplaire?.ouvrage?.titre}"</p>
 
                         {contactSent ? (
                             <motion.div className={styles.sentMsg}

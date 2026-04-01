@@ -4,11 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     BookOpen, Check, Hash, Image as ImageIcon, MapPin, Search,
     UploadCloud, X, ArrowRight, ArrowLeft, Loader2, Sparkles, Building2,
-    AlertCircle, PartyPopper, Eye, ShieldCheck
+    AlertCircle, Clock, Eye, ShieldCheck
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import ManualCard from './ManualCard';
 import styles from './PublishAd.module.css';
+import { bookApi } from '../../api/client';
 
 const STEPS = [
     { id: 1, title: 'Le Manuel', icon: BookOpen },
@@ -75,20 +76,26 @@ export default function PublishAd() {
         setFormData(prev => ({ ...prev, photos: prev.photos.filter((_, i) => i !== index) }));
     };
 
-    const handlePublish = () => {
+    const handlePublish = async () => {
         if (!validateStep3()) return;
         setIsPublishing(true);
-        // Simulate DB insertion (Manuel -> Exemplaire -> Annonce)
-        setTimeout(() => {
+        
+        try {
+            await bookApi.create(formData);
+            
             setIsPublishing(false);
-            toast.success("Annonce publiée avec succès !");
+            toast.success("Annonce en cours de traitement, merci de patienter s'il vous plaît.");
             setShowSuccess(true);
             
             // Redirect automatically after showing confetti for a few seconds
             setTimeout(() => {
                 navigate('/student-dashboard/dashboard');
             }, 3500);
-        }, 1500);
+        } catch (error) {
+            console.error('Publish error:', error);
+            toast.error("Erreur lors de la publication. Veuillez réessayer.");
+            setIsPublishing(false);
+        }
     };
 
     // Validations
@@ -152,13 +159,12 @@ export default function PublishAd() {
                         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring" }}>
                         <div className={styles.successIconWrap}>
                             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: "spring", bounce: 0.5 }}>
-                                <PartyPopper size={64} className={styles.successIcon} />
+                                <Clock size={64} className={styles.successIcon} />
                             </motion.div>
                         </div>
-                        <h2 className={styles.successTitle}>Annonce publiée avec succès !</h2>
+                        <h2 className={styles.successTitle}>Annonce en cours de traitement</h2>
                         <p className={styles.successText}>
-                            Votre manuel a été enregistré avec succès et l'annonce est publiée.
-                            Il est maintenant visible par les autres étudiants.
+                            L'annonce est en cours de traitement , merci de patienter s'il vous plait.
                         </p>
                         <button className={styles.btnPrimary} style={{ margin: '0 auto', display: 'flex' }} onClick={() => navigate('/student-dashboard')}>
                             Retour au tableau de bord

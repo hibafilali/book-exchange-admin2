@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -8,41 +8,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { useFavorites } from '../../context/FavoritesContext';
-import { ALL_BOOKS } from '../../data/mockBooks';
+import { bookApi, dashboardApi } from '../../api/client';
 import ManualCard from './ManualCard';
 import styles from './StudentDashboard.module.css';
-
-// ============================
-// MOCK DATA (5 Tables)
-// ============================
-const MOCK_STATS = {
-    economies: 180, // DH sauvés 
-    gains: 85, // DH gagnés 
-    livresPartages: 4, 
-    arbresSauves: 2.5 
-};
-
-// --- MAP LISTINGS FROM CENTRAL DATA (IDs 11, 10, 12 for Hiba) ---
-const MOCK_LISTINGS = [
-    { ...ALL_BOOKS.find(b => b.id === 11), status: 'VALIDEE' },
-    { ...ALL_BOOKS.find(b => b.id === 10), status: 'ATTENTE' },
-    { ...ALL_BOOKS.find(b => b.id === 12), status: 'EXPIREE' },
-];
-
-const MOCK_ACTIONS_REQUISES = [
-    { id: 101, type: 'DEMANDE_PRET', livre: 'Algorithmes', avec: 'Sofia M.', avatar: 'S', temps: 'Il y a 30 min' },
-    { id: 102, type: 'CONFIRM_REMISE', livre: 'Macroéconomie', avec: 'Omar B.', avatar: 'O', temps: 'Il y a 2h' },
-];
-
-const MOCK_WISHES_RADAR = [
-    { id: 1, titre: 'Marketing Digital', auteur: 'D. Chaffey', match: true, edition: '2023' },
-    { id: 2, titre: 'Bases de Données', auteur: 'G. Gardarin', match: false, edition: 'Peu importe' },
-];
-
-const MOCK_APPOINTMENTS = [
-    { id: 1, livre: 'Designing Data-Intensive...', avec: 'Sophie M.', temps: 'Demain, 10:30', lieu: 'Bibliothèque (BU)', type: 'REMISE' },
-    { id: 2, livre: 'Clean Code', avec: 'Anas L.', temps: 'Samedi, 14:00', lieu: 'Cafétéria Centrale', type: 'RECEPTION' },
-];
 
 // Status badge mapping
 const STATUS_STYLES = {
@@ -59,12 +27,42 @@ export default function StudentDashboard() {
     const { favoritedIds } = useFavorites();
     const navigate = useNavigate();
     
+    const [allBooks, setAllBooks] = useState([]);
+    const [dashboardFeatures, setDashboardFeatures] = useState({ stats: null, actions: [], appointments: [], wishes: [] });
+    const [isLoading, setIsLoading] = useState(true);
+    
     // Profile Logic
     const [isEditing, setIsEditing] = useState(false);
     const [tempName, setTempName] = useState(user?.name || '');
     const fileInputRef = useRef(null);
 
-    const favoritedBooks = ALL_BOOKS.filter(b => favoritedIds.includes(b.id));
+    // Fetch Books & Dashboard Features from Backend
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                setIsLoading(true);
+                const [booksRes, featuresRes] = await Promise.all([
+                    bookApi.getAll(),
+                    dashboardApi.getStats(1) // Mock user 1
+                ]);
+                setAllBooks(booksRes.data);
+                setDashboardFeatures(featuresRes.data);
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchDashboardData();
+    }, []);
+
+    const favoritedBooks = allBooks.filter(b => favoritedIds.includes(b.id));
+
+    // Dynamic listings mapping grabbing first 3 for visual preview
+    const myListings = allBooks.slice(0, 3).map((b, i) => ({
+        ...b,
+        status: i === 0 ? 'VALIDEE' : i === 1 ? 'ATTENTE' : 'EXPIREE'
+    }));
 
     const handleAvatarClick = () => fileInputRef.current?.click();
     
@@ -171,17 +169,19 @@ export default function StudentDashboard() {
                                     </div>
                                 </div>
                                 <div className={styles.inventoryList}>
-                                    {MOCK_LISTINGS.map(listing => {
+                                    {isLoading ? (
+                                        <div className={styles.loading}>Chargement...</div>
+                                    ) : myListings.map(listing => {
                                         const StatusIcon = STATUS_STYLES[listing.status].icon;
                                         return (
                                             <div key={listing.id} className={styles.inventoryCard}>
                                                 <div className={styles.invImageWrap}>
-                                                    <img src={listing.photoUrl} alt={listing.titreAnnonce} />
+                                                    <img src={listing.exemplaire?.photoUrl || listing.photoUrl} alt={listing.exemplaire?.ouvrage?.titre || 'Annonce sans titre'} />
                                                 </div>
                                                 <div className={styles.invContent}>
                                                     <div className={styles.invMain}>
                                                         <div className={styles.listingInfo}>
-                                                            <h3>{listing.titreAnnonce}</h3>
+                                                            <h3>{listing.exemplaire?.ouvrage?.titre || 'Annonce générique'}</h3>
                                                             <div className={styles.listingMeta}>
                                                                 <span className={styles.typeBadge} style={{ backgroundColor: listing.typeEchange === 'VENTE' ? '#F97316' : listing.typeEchange === 'PRET' ? '#06B6D4' : '#10B981' }}>{listing.typeEchange}</span>
                                                                 <span className={styles.priceText}>{listing.typeEchange === 'VENTE' ? `${listing.prixVente} DH` : listing.typeEchange === 'DON' ? 'Gratuit' : 'Prêt'}</span>
@@ -245,7 +245,7 @@ export default function StudentDashboard() {
                                     <span className={styles.pulseDot}></span>
                                 </div>
                                 <div className={styles.actionList}>
-                                    {MOCK_ACTIONS_REQUISES.map(act => (
+                                    {dashboardFeatures.actions.map(act => (
                                         <div key={act.id} className={styles.actionItem}>
                                             <div className={styles.actionTop}>
                                                 <div className={styles.actionAvatar}>{act.avatar}</div>
@@ -274,21 +274,21 @@ export default function StudentDashboard() {
                                         <div className={styles.impactIcon} style={{ background: '#ecfdf5', color: '#10b981' }}><TrendingUp size={14}/></div>
                                         <div className={styles.impactInfo}>
                                             <span className={styles.impactLabel}>Économies</span>
-                                            <span className={styles.impactVal}>{MOCK_STATS.economies} DH</span>
+                                            <span className={styles.impactVal}>{dashboardFeatures.stats?.economies || 0} DH</span>
                                         </div>
                                     </div>
                                     <div className={styles.impactRow}>
                                         <div className={styles.impactIcon} style={{ background: '#eff6ff', color: '#3b82f6' }}><BookHeart size={14}/></div>
                                         <div className={styles.impactInfo}>
                                             <span className={styles.impactLabel}>Livres Partagés</span>
-                                            <span className={styles.impactVal}>{MOCK_STATS.livresPartages}</span>
+                                            <span className={styles.impactVal}>{dashboardFeatures.stats?.livresPartages || 0}</span>
                                         </div>
                                     </div>
                                     <div className={styles.impactRow}>
                                         <div className={styles.impactIcon} style={{ background: '#fff1f2', color: '#ec4899' }}><Leaf size={14}/></div>
                                         <div className={styles.impactInfo}>
                                             <span className={styles.impactLabel}>Arbres Sauvés</span>
-                                            <span className={styles.impactVal}>{MOCK_STATS.arbresSauves}</span>
+                                            <span className={styles.impactVal}>{dashboardFeatures.stats?.arbresSauves || 0}</span>
                                         </div>
                                     </div>
                                 </div>

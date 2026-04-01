@@ -23,9 +23,10 @@ export default function ManualCard({ annonce, onCardClick, index = 0 }) {
     const { isFavorited, toggleFavorite } = useFavorites();
     const isFav = isFavorited(annonce.id);
     const typeConf = TYPE_CONFIG[annonce.typeEchange] || TYPE_CONFIG.VENTE;
-    const etatConf = ETAT_CONFIG[annonce.etat] || ETAT_CONFIG.BON;
+    const etatConf = ETAT_CONFIG[annonce.exemplaire?.etat] || ETAT_CONFIG.BON;
     const isPopular = annonce.nbVues >= 150;
-    const isTrusted = annonce.nbOperations >= 3;
+    const nbEchanges = annonce.exemplaire?.proprietaire?.nbEchanges || 0;
+    const isTrusted = nbEchanges >= 3;
 
     const priceLabel = annonce.typeEchange === 'VENTE'
         ? `${annonce.prixVente} DH`
@@ -43,7 +44,7 @@ export default function ManualCard({ annonce, onCardClick, index = 0 }) {
         >
             {/* Image */}
             <div className={styles.imageWrap}>
-                <img src={annonce.photoUrl} alt={annonce.titreAnnonce} className={styles.image} loading="lazy" />
+                <img src={annonce.exemplaire?.photoUrl || annonce.photoUrl} alt={annonce.exemplaire?.ouvrage?.titre || 'Annonce sans titre'} className={styles.image} loading="lazy" />
 
                 {/* Type ribbon */}
                 <div className={styles.typeRibbon} style={{ background: typeConf.gradient }}>
@@ -86,21 +87,22 @@ export default function ManualCard({ annonce, onCardClick, index = 0 }) {
 
             {/* Body */}
             <div className={styles.body}>
-                <h3 className={styles.title}>{annonce.titreAnnonce}</h3>
-                <p className={styles.author}>{annonce.auteur}</p>
+                <h3 className={styles.title}>{annonce.exemplaire?.ouvrage?.titre || 'Annonce générique'}</h3>
+                <p className={styles.author}>{annonce.exemplaire?.ouvrage?.auteur || 'Auteur inconnu'}</p>
 
                 {isTrusted && (
                     <div className={styles.trustBadge}>
                         <ShieldCheck size={12} />
-                        <span>Vérifié · {annonce.nbOperations} échanges</span>
+                        <span>Vérifié · {nbEchanges} échanges</span>
                     </div>
                 )}
 
                 <div className={styles.meta}>
-                    <span><MapPin size={13} /> {annonce.ville}</span>
+                    <span><MapPin size={13} /> {annonce.exemplaire?.proprietaire?.ville || 'Non spécifié'}</span>
                     <span><Eye size={13} /> {annonce.nbVues}</span>
                 </div>
             </div>
         </motion.div>
     );
+
 }

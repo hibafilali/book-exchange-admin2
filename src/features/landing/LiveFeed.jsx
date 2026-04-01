@@ -1,75 +1,45 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookUp, ArrowRightLeft, Gift, Zap, MapPin } from 'lucide-react';
-import { ALL_BOOKS } from '../../data/mockBooks';
+import { BookUp, ArrowRightLeft, Gift } from 'lucide-react';
+import { bookApi } from '../../api/client';
 import styles from './LiveFeed.module.css';
 
-const ACTIVITIES = [
-    {
-        id: 1,
-        type: 'échange',
-        title: `Échange réussi : ${ALL_BOOKS[0].titreAnnonce}`,
-        location: 'ENSIAS, Rabat',
-        time: '5 min',
-        icon: ArrowRightLeft,
-        colorClass: styles.actionBlue,
-        bgIcon: 'rgba(59, 130, 246, 0.08)'
-    },
-    {
-        id: 2,
-        type: 'don',
-        title: `Don de manuel : ${ALL_BOOKS[1].titreAnnonce}`,
-        location: 'FMP, Fès',
-        time: '12 min',
-        icon: Gift,
-        colorClass: styles.actionSuccess,
-        bgIcon: 'rgba(16, 185, 129, 0.08)'
-    },
-    {
-        id: 3,
-        type: 'vente',
-        title: `Vente : ${ALL_BOOKS[9].titreAnnonce}`,
-        location: 'Hassan II, Casablanca',
-        time: '25 min',
-        icon: BookUp,
-        colorClass: styles.actionBrand,
-        bgIcon: 'rgba(255, 87, 34, 0.08)'
-    },
-    {
-        id: 4,
-        type: 'échange',
-        title: `Échange : ${ALL_BOOKS[3].titreAnnonce}`,
-        location: 'FSJES, Settat',
-        time: '45 min',
-        icon: ArrowRightLeft,
-        colorClass: styles.actionBlue,
-        bgIcon: 'rgba(59, 130, 246, 0.08)'
-    },
-    {
-        id: 5,
-        type: 'don',
-        title: `Don : ${ALL_BOOKS[8].titreAnnonce}`,
-        location: 'FST, Marrakech',
-        time: '1h',
-        icon: Gift,
-        colorClass: styles.actionSuccess,
-        bgIcon: 'rgba(16, 185, 129, 0.08)'
-    },
-    {
-        id: 6,
-        type: 'vente',
-        title: `Vente : ${ALL_BOOKS[7].titreAnnonce}`,
-        location: 'ENCG, Agadir',
-        time: '2h',
-        icon: BookUp,
-        colorClass: styles.actionBrand,
-        bgIcon: 'rgba(255, 87, 34, 0.08)'
-    }
-];
-
 export default function LiveFeed() {
-    // Doubling activities for seamless loop
-    const marqueeItems = [...ACTIVITIES, ...ACTIVITIES];
+    const [activities, setActivities] = useState([]);
+
+    useEffect(() => {
+        const fetchRecent = async () => {
+            try {
+                const response = await bookApi.getAll();
+                const books = response.data.slice(0, 6);
+                
+                const dynamicActivities = books.map((b, i) => {
+                    const isDon = b.typeEchange === 'DON';
+                    const isVente = b.typeEchange === 'VENTE';
+                    const Icon = isDon ? Gift : (isVente ? BookUp : ArrowRightLeft);
+                    const colorClass = isDon ? styles.actionSuccess : (isVente ? styles.actionBrand : styles.actionBlue);
+                    const bgIcon = isDon ? 'rgba(16, 185, 129, 0.08)' : (isVente ? 'rgba(255, 87, 34, 0.08)' : 'rgba(59, 130, 246, 0.08)');
+                    const titlePrefix = isDon ? 'Don' : (isVente ? 'Vente' : 'Échange');
+                    
+                    return {
+                        id: b.id,
+                        type: b.typeEchange,
+                        title: `${titlePrefix} : ${b.exemplaire?.ouvrage?.titre || 'Manuel'}`,
+                        location: b.exemplaire?.proprietaire?.ville || 'Campus',
+                        time: `${(i+1) * 5} min`,
+                        icon: Icon,
+                        colorClass,
+                        bgIcon
+                    };
+                });
+                
+                setActivities([...dynamicActivities, ...dynamicActivities]); // Double for loop
+            } catch (error) {
+                console.error("LiveFeed fetch error", error);
+            }
+        };
+        fetchRecent();
+    }, []);
 
     return (
         <section className={styles.liveFeedSection}>
@@ -89,7 +59,7 @@ export default function LiveFeed() {
                     }}
                     whileHover={{ transition: { duration: 35 * 4, ease: "linear" } }} // Slow down more on hover instead of full stop for "sovereign" feel
                 >
-                    {marqueeItems.map((activity, index) => {
+                    {activities.map((activity, index) => {
                         const Icon = activity.icon;
                         return (
                             <div key={`${activity.id}-${index}`} className={styles.activityCard}>

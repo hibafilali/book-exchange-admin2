@@ -1,46 +1,100 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Search, Eye, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import styles from './AnnoncesList.module.css';
+import { bookApi } from '../../api/client';
+import Modal from '../../components/ui/Modal';
 
-// Import des assets réels
+// Import des assets réels (fallback)
 import book1 from '../../assets/book1.png';
 import book2 from '../../assets/book2.png';
 import book3 from '../../assets/book3.png';
 import book4 from '../../assets/book4.png';
 import book5 from '../../assets/book5.png';
-import book6 from '../../assets/book6.png';
-import book7 from '../../assets/book7.png';
-import book8 from '../../assets/book8.png';
-import book9 from '../../assets/book9.png';
-import book10 from '../../assets/book10.png';
 
-const MOCK_ANNONCES = [
-    { id: 101, titre: 'Anatomie Humaine', auteur: 'Dr. Salim Alaoui', type: 'VENTE', prix: '85 DH', etat: 'NEUF', statut: 'En attente', etudiant: 'Amine El Amrani', image: book2 },
-    { id: 102, titre: 'Maths pour Ingénieurs', auteur: 'Prof. Kamal Ziani', type: 'VENTE', prix: '105 DH', etat: 'BON', statut: 'Validée', etudiant: 'Fatima Zahra Fassi', image: book5 },
-    { id: 103, titre: 'Droit Civil : Obligations', auteur: 'Prof. Y. Benani', type: 'DON', prix: 'Gratuit', etat: 'COMME NEUF', statut: 'En attente', etudiant: 'Youssef Benjelloun', image: book3 },
-    { id: 104, titre: 'Macroéconomie Moderne', auteur: 'Dr. Amina El Fassi', type: 'VENTE', prix: '95 DH', etat: 'USE', statut: 'En attente', etudiant: 'Khadija Bennani', image: book4 },
-    { id: 105, titre: 'Chimie Organique', auteur: 'Dr. Sophie Meyer', type: 'VENTE', prix: '80 DH', etat: 'BON', statut: 'En attente', etudiant: 'Mehdi Tazi', image: book1 },
-    { id: 106, titre: 'Introduction au Marketing', auteur: 'Prof. Philip Kotler', type: 'DON', prix: 'Gratuit', etat: 'BON', statut: 'Validée', etudiant: 'Anas Idrissi', image: book8 },
-    { id: 107, titre: 'Physique : Scientifiques', auteur: 'Prof. D. Halliday', type: 'VENTE', prix: '100 DH', etat: 'NEUF', statut: 'En attente', etudiant: 'Omar Berrada', image: book7 },
-    { id: 108, titre: 'Psychologie Contemporaine', auteur: 'Dr. Jane Smith', type: 'VENTE', prix: '75 DH', etat: 'BON', statut: 'En attente', etudiant: 'Sofia Amal', image: book9 },
-    { id: 109, titre: 'Réseaux Informatiques', auteur: 'Prof. Alex Turner', type: 'PRET', prix: '45 DH/sem', etat: 'NEUF', statut: 'En attente', etudiant: 'Rachid Lahlou', image: book10 },
-    { id: 110, titre: 'Gestion de Projet', auteur: 'J.P. Marot', type: 'VENTE', prix: '120 DH', etat: 'BON', statut: 'Refusée', etudiant: 'Sami Alami', image: book6 },
-    { id: 111, titre: 'Algèbre Linéaire', auteur: 'Prof. S. Sahli', type: 'DON', prix: 'Gratuit', etat: 'USE', statut: 'Refusée', etudiant: 'Laila Zahid', image: book1 },
-];
+const MOCK_IMAGES = [book1, book2, book3, book4, book5];
+const MOCK_ANNONCES = []; // Kept to satisfy potential unused imports issues, but empty.
+
+const getFullImageUrl = (url, id) => {
+    // Les URLs relatives (comme /admin/books/...) venant de la BDD sont factices 
+    // car le backend ne sert pas encore de fichiers statiques.
+    if (!url || !url.startsWith('http')) {
+        return MOCK_IMAGES[(Math.max(1, id || 1)) % MOCK_IMAGES.length];
+    }
+    return url;
+};
 
 export default function AnnoncesList() {
-    const [annonces, setAnnonces] = useState(MOCK_ANNONCES);
+    const [annonces, setAnnonces] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
+    const [viewingAnnonce, setViewingAnnonce] = useState(null);
 
-    const updateStatut = (id, newStatut) => {
-        setAnnonces(annonces.map(a => a.id === id ? { ...a, statut: newStatut } : a));
-        if (newStatut === 'Validée') {
-            toast.success(`L'annonce a été validée.`);
-        } else {
-            toast.error(`L'annonce a été refusée.`);
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+
+    const fetchAnnonces = async () => {
+        try {
+            const response = await bookApi.getAll();
+            const formatted = response.data.map(a => {
+                const ouvrage = a.exemplaire?.ouvrage || {};
+                const proprietaire = a.exemplaire?.proprietaire || {};
+                return {
+                    id: a.id,
+                    titre: ouvrage.titre || 'Sans titre',
+                    auteur: ouvrage.auteur || 'Inconnu',
+                    type: a.typeEchange || 'VENTE',
+                    prix: a.prixVente ? `${a.prixVente} DH` : 'Gratuit',
+                    etat: a.exemplaire?.etat || 'INCONNU',
+                    statut: a.status === 'ACTIF' ? 'Validée' 
+                          : a.status === 'REJETEE' ? 'Refusée' 
+                          : 'En attente',
+                    etudiant: `${proprietaire.nom || ''} ${proprietaire.prenom || ''}`.trim() || 'Inconnu',
+                    image: getFullImageUrl(a.exemplaire?.photoUrl, a.id),
+                    description: a.description || 'Aucune description fournie.',
+                    datePublication: a.datePublication ? new Date(a.datePublication).toLocaleDateString() : 'N/A',
+                    categorie: ouvrage.categorie?.label || 'Non classé',
+                    filiere: proprietaire.filiere || 'N/A',
+                    ville: proprietaire.ville || 'N/A',
+                    dbStatus: a.status
+                };
+            });
+            setAnnonces(formatted);
+        } catch(err) {
+            toast.error("Erreur de chargement des annonces");
+            console.error(err);
+        }
+    }
+
+    useEffect(() => {
+        fetchAnnonces();
+    }, []);
+
+    // Reset pagination to page 1 on search or filter change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter]);
+
+    const updateStatut = async (id, newStatutUI) => {
+        const dbStatus = newStatutUI === 'Validée' ? 'ACTIF' 
+                     : newStatutUI === 'Refusée' ? 'REJETEE' 
+                     : 'ATTENTE';
+        
+        try {
+            await bookApi.updateStatus(id, dbStatus);
+            setAnnonces(annonces.map(a => a.id === id ? { ...a, statut: newStatutUI, dbStatus: dbStatus } : a));
+            
+            if (newStatutUI === 'Validée') {
+                toast.success(`L'annonce a été validée.`);
+            } else if (newStatutUI === 'Refusée') {
+                toast.error(`L'annonce a été refusée.`);
+            } else {
+                toast.success(`L'annonce a été remise en attente.`);
+            }
+        } catch(err) {
+            toast.error("Échec de la mise à jour");
         }
     };
 
@@ -50,6 +104,12 @@ export default function AnnoncesList() {
         const matchesFilter = statusFilter === 'ALL' || a.statut === statusFilter;
         return matchesSearch && matchesFilter;
     });
+
+    // Calc pagination
+    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const paginatedAnnonces = filtered.slice(indexOfFirstItem, indexOfLastItem);
 
     return (
         <div className={styles.container}>
@@ -101,7 +161,7 @@ export default function AnnoncesList() {
 
             <div className={styles.listContainer}>
                 <AnimatePresence mode="popLayout">
-                {filtered.map(annonce => (
+                {paginatedAnnonces.map(annonce => (
                     <motion.div 
                         layout 
                         initial={{ opacity: 0, x: -10 }}
@@ -161,14 +221,104 @@ export default function AnnoncesList() {
                                     <RotateCcw size={16} />
                                 </button>
                             )}
-                            <button className={`${styles.iconAction} ${styles.viewBtn}`} title="Détails">
+                            <button 
+                                className={`${styles.iconAction} ${styles.viewBtn}`} 
+                                title="Détails"
+                                onClick={() => setViewingAnnonce(annonce)}
+                            >
                                 <Eye size={16} />
                             </button>
                         </div>
                     </motion.div>
                 ))}
                 </AnimatePresence>
+
+                {/* Pagination Controls */}
+                {filtered.length > 0 && (
+                    <div className={styles.pagination}>
+                        <div className={styles.pageInfo}>
+                            Affichage de <b>{indexOfFirstItem + 1}</b> à <b>{Math.min(indexOfLastItem, filtered.length)}</b> sur <b>{filtered.length}</b> annonces
+                        </div>
+                        <div className={styles.paginationActions}>
+                            <button
+                                className={styles.pageBtn}
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage(currentPage - 1)}
+                            >
+                                ‹
+                            </button>
+                            {[...Array(totalPages)].map((_, i) => (
+                                <button
+                                    key={i}
+                                    className={`${styles.pageBtn} ${currentPage === i + 1 ? styles.activePage : ''}`}
+                                    onClick={() => setCurrentPage(i + 1)}
+                                >
+                                    {i + 1}
+                                </button>
+                            ))}
+                            <button
+                                className={styles.pageBtn}
+                                disabled={currentPage === totalPages || totalPages === 0}
+                                onClick={() => setCurrentPage(currentPage + 1)}
+                            >
+                                ›
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
+
+            {viewingAnnonce && (
+                <Modal 
+                    isOpen={true} 
+                    onClose={() => setViewingAnnonce(null)} 
+                    title="Détails de l'annonce"
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
+                        <div style={{ display: 'flex', gap: '15px' }}>
+                            <img 
+                                src={viewingAnnonce.image} 
+                                alt={viewingAnnonce.titre} 
+                                style={{ width: '90px', height: '125px', objectFit: 'cover', borderRadius: '6px' }} 
+                            />
+                            <div style={{ flex: 1 }}>
+                                <h2 style={{ fontSize: '18px', marginBottom: '2px', lineHeight: '1.2' }}>{viewingAnnonce.titre}</h2>
+                                <p style={{ color: '#6b7280', marginBottom: '8px' }}>par {viewingAnnonce.auteur}</p>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                                    <span className={styles.simpleBadge} style={{ padding: '2px 6px', fontSize: '11px' }}>{viewingAnnonce.type}</span>
+                                    <span className={styles.priceBadge} style={{ padding: '2px 6px', fontSize: '11px' }}>{viewingAnnonce.prix}</span>
+                                    <span className={styles.etatBadge} style={{ padding: '2px 6px', fontSize: '11px' }}>{viewingAnnonce.etat}</span>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 10px' }}>
+                                    <span style={{ fontWeight: '600' }}>Catégorie:</span> <span>{viewingAnnonce.categorie}</span>
+                                    <span style={{ fontWeight: '600' }}>Date ajout:</span> <span>{viewingAnnonce.datePublication}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ background: '#f9fafb', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                            <h4 style={{ marginBottom: '4px', fontSize: '13px', color: '#374151', fontWeight: '600' }}>Description</h4>
+                            <p style={{ color: '#4b5563', lineHeight: '1.4' }}>{viewingAnnonce.description}</p>
+                        </div>
+
+                        <div style={{ background: '#f0fdf4', padding: '10px 12px', borderRadius: '8px', border: '1px solid #bbf7d0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
+                            <h4 style={{ gridColumn: 'span 2', marginBottom: '2px', fontSize: '13px', color: '#166534', fontWeight: '600' }}>Vendeur (Étudiant)</h4>
+                            <p><strong>Nom:</strong> {viewingAnnonce.etudiant}</p>
+                            <p><strong>Ville:</strong> {viewingAnnonce.ville}</p>
+                            <p style={{ gridColumn: 'span 2' }}><strong>Filière:</strong> {viewingAnnonce.filiere}</p>
+                        </div>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '5px' }}>
+                            <button 
+                                onClick={() => setViewingAnnonce(null)}
+                                style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid #e5e7eb', background: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
+                            >
+                                Fermer
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
         </div>
     );
 }

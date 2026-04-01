@@ -4,7 +4,8 @@ import {
     MapPin, Calendar, Star, MessageSquare, ShieldCheck, 
     Share2, Flag, Award, CheckCircle2, Package
 } from 'lucide-react';
-import { ALL_BOOKS } from '../../data/mockBooks';
+import { useEffect, useState } from 'react';
+import { bookApi } from '../../api/client';
 import ManualCard from './ManualCard';
 import styles from './SellerProfile.module.css';
 
@@ -17,6 +18,26 @@ const REVIEWS = [
 ];
 
 export default function SellerProfile() {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const [allBooks, setAllBooks] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchBooks = async () => {
+            try {
+                setIsLoading(true);
+                const response = await bookApi.getAll();
+                setAllBooks(response.data);
+            } catch (error) {
+                console.error("Failed to load seller books", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchBooks();
+    }, []);
+
     const unslugify = (slug) => {
         if (!slug) return 'Utilisateur';
         return slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
@@ -26,10 +47,10 @@ export default function SellerProfile() {
     const name = id ? unslugify(id) : 'Utilisateur';
 
     // Get ads for this seller from central data (filter by owner name)
-    const sellerAds = ALL_BOOKS.filter(b => b.proprietaire.nom.toLowerCase().includes(name.split(' ')[0].toLowerCase()));
+    const sellerAds = allBooks.filter(b => b.exemplaire?.proprietaire?.nom?.toLowerCase().includes(name.split(' ')[0].toLowerCase()));
     
     // Fallback if no ads found for this name: show a few recent ones
-    const finalAds = sellerAds.length > 0 ? sellerAds : ALL_BOOKS.slice(0, 3);
+    const finalAds = sellerAds.length > 0 ? sellerAds : allBooks.slice(0, 3);
     
     // Deterministic pseudo-randomness based on name length or chars
     const nameHash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -160,7 +181,9 @@ export default function SellerProfile() {
                     </div>
 
                     <div className={styles.listingsGrid}>
-                        {finalAds.map((b, i) => (
+                        {isLoading ? (
+                            <div style={{ padding: '2rem', textAlign: 'center' }}>Chargement des annonces...</div>
+                        ) : finalAds.map((b, i) => (
                             <ManualCard key={b.id} annonce={b} index={i}
                                 onCardClick={(ann) => navigate(`/student-dashboard/book/${ann.id}`)} />
                         ))}

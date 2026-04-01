@@ -19,6 +19,7 @@ import PublishAd from './features/student/PublishAd';
 import StudentDashboard from './features/student/StudentDashboard';
 import ChatWindow from './features/student/ChatWindow';
 import SellerProfile from './features/student/SellerProfile';
+import SupportPlaintes from './features/student/SupportPlaintes';
 import LandingPage from './features/landing/LandingPage';
 import { useAuth } from './features/auth/useAuth';
 import { FavoritesProvider } from './context/FavoritesContext';
@@ -128,6 +129,7 @@ function App() {
             <Route path="dashboard" element={<StudentDashboard />} />
             <Route path="messages" element={<ChatWindow />} />
             <Route path="user/:id" element={<SellerProfile />} />
+            <Route path="support" element={<SupportPlaintes />} />
           </Route>
 
           {/* Protected Admin Routes */}

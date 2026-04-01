@@ -1,10 +1,17 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, User, Bell, LogOut, Plus, LayoutDashboard, MessageSquare, Shield, Lock, Eye, EyeOff, Save, X } from 'lucide-react';
+import { Search, User, Bell, LogOut, Plus, LayoutDashboard, MessageSquare, Shield, ShieldAlert, Lock, Eye, EyeOff, Save, X, Clock, CheckCircle, XCircle, Info } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../auth/useAuth';
+import { notificationApi } from '../../api/client';
 import YTeraLogo from '../../components/common/YTeraLogo';
+
+const NOTIF_ICONS = {
+    SUCCESS: <CheckCircle size={16} style={{ color: '#22c55e' }} />,
+    ERROR: <XCircle size={16} style={{ color: '#ef4444' }} />,
+    INFO: <Info size={16} style={{ color: '#3b82f6' }} />
+};
 import styles from './StudentLayout.module.css';
 
 export default function StudentLayout() {
@@ -12,7 +19,12 @@ export default function StudentLayout() {
     const navigate = useNavigate();
     const location = useLocation();
     const [showProfile, setShowProfile] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(3);
+    
+    // Notification state
+    const [showNotifMenu, setShowNotifMenu] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [notifications, setNotifications] = useState([]);
+    
     const [navSearch, setNavSearch] = useState('');
     const [searchFilter, setSearchFilter] = useState('all');
     const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -43,6 +55,44 @@ export default function StudentLayout() {
             setNavSearch('');
             searchInputRef.current?.blur();
         }
+    };
+
+    // --- Notification Logic ---
+    const userId = user?.id || 1;
+
+    const fetchUnreadCount = async () => {
+        try {
+            const { data } = await notificationApi.getUnreadCount(userId);
+            setUnreadCount(data.count);
+        } catch (error) {
+            console.error('Error fetching unread count:', error);
+        }
+    };
+
+    const fetchNotifications = async () => {
+        try {
+            const { data } = await notificationApi.getByUserId(userId);
+            setNotifications(data);
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+        }
+    };
+
+    React.useEffect(() => {
+        fetchUnreadCount();
+        const interval = setInterval(fetchUnreadCount, 10000);
+        return () => clearInterval(interval);
+    }, [userId]);
+
+    const handleNotifClick = () => {
+        if (!showNotifMenu) {
+            fetchNotifications();
+            if (unreadCount > 0) {
+                notificationApi.markAllAsRead(userId).then(() => setUnreadCount(0));
+            }
+        }
+        setShowNotifMenu(!showNotifMenu);
+        setShowProfile(false);
     };
 
     const handlePasswordUpdate = (e) => {
@@ -130,18 +180,55 @@ export default function StudentLayout() {
                             <Plus size={16} /> <span className={styles.hideOnMobile}>Publier</span>
                         </button>
 
-                        <button className={styles.iconBtn} onClick={() => setUnreadCount(0)}>
-                            <Bell size={19} />
-                            {unreadCount > 0 && <span className={styles.badge}>{unreadCount > 9 ? '9+' : unreadCount}</span>}
-                        </button>
+                        <div className={styles.notifWrapper}>
+                            <button className={`${styles.iconBtn} ${showNotifMenu ? styles.active : ''}`} onClick={handleNotifClick}>
+                                <Bell size={19} />
+                                {unreadCount > 0 && <span className={styles.badge}>{unreadCount > 9 ? '9+' : unreadCount}</span>}
+                            </button>
+
+                            <AnimatePresence>
+                                {showNotifMenu && (
+                                    <motion.div className={styles.notifMenu}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 10 }}
+                                    >
+                                        <div className={styles.notifHeader}>
+                                            <h3>Notifications</h3>
+                                        </div>
+                                        <div className={styles.notifList}>
+                                            {notifications.length === 0 ? (
+                                                <div className={styles.emptyNotif}>Aucune notification</div>
+                                            ) : (
+                                                notifications.map(notif => (
+                                                    <div key={notif.id} className={`${styles.notifItem} ${!notif.is_read ? styles.notifUnread : ''}`}>
+                                                        <div className={styles.notifIcon}>
+                                                            {NOTIF_ICONS[notif.type] || <Info size={16} />}
+                                                        </div>
+                                                        <div className={styles.notifContent}>
+                                                            <p className={styles.notifTitle}>{notif.titre}</p>
+                                                            <p className={styles.notifMessage}>{notif.message}</p>
+                                                            <span className={styles.notifDate}>
+                                                                <Clock size={12} /> {new Date(notif.created_at).toLocaleDateString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
 
                         <div className={styles.profileWrap}>
-                            <button className={styles.avatarBtn} onClick={() => setShowProfile(!showProfile)}>
+                            <button className={styles.avatarBtn} onClick={() => { setShowProfile(!showProfile); setShowNotifMenu(false); }}>
                                 <div className={styles.avatar}>
                                     <img 
-                                        src={user?.avatar || 'https://i.pravatar.cc/120?u=hiba'} 
+                                        src={user?.avatarUrl || user?.avatar || `https://ui-avatars.com/api/?name=${user?.nom || user?.name || 'Etudiant'}&background=random`} 
                                         alt="Profil" 
                                         className={styles.avatarImg}
+                                        onError={(e) => { e.target.onerror = null; e.target.src = "https://ui-avatars.com/api/?name=User&background=random"; }}
                                     />
                                 </div>
                             </button>
@@ -159,6 +246,7 @@ export default function StudentLayout() {
                                     </div>
                                     <button onClick={() => { setShowProfile(false); navigate('/student-dashboard/dashboard'); }}><User size={15} /> Mon Profil</button>
                                     <button onClick={() => { setShowPasswordModal(true); setShowProfile(false); }}><Shield size={15} /> Sécurité</button>
+                                    <button onClick={() => { setShowProfile(false); navigate('/student-dashboard/support'); }}><ShieldAlert size={15} /> Support & Signalements</button>
                                     <div className={styles.menuDivider}></div>
                                     <button onClick={() => { logout(); navigate('/login'); }}><LogOut size={15} /> Déconnexion</button>
                                 </motion.div>

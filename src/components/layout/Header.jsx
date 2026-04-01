@@ -124,9 +124,10 @@ export default function Header() {
                     >
                         <div className={styles.avatarWrapper}>
                             <img 
-                                src={user?.avatar || 'https://i.pravatar.cc/150?u=admin'} 
-                                alt="Admin" 
+                                src={user?.avatarUrl || user?.avatar || `https://ui-avatars.com/api/?name=${user?.nom || user?.name || 'Admin'}&background=random`}
+                                alt="Profil" 
                                 className={styles.avatarImg} 
+                                onError={(e) => { e.target.onerror = null; e.target.src = "https://ui-avatars.com/api/?name=User&background=random"; }}
                             />
                             <div className={styles.onlineDot}></div>
                         </div>

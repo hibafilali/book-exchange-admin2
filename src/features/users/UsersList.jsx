@@ -1,30 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MoreVertical, Edit2, Trash2, ShieldAlert } from 'lucide-react';
 import styles from './UsersList.module.css';
 import Modal from '../../components/ui/Modal';
 import AdminForm from './AdminForm';
-
-// Fake Data API
-const MOCK_USERS = [
-    { id: 1, nom: 'El Amrani', prenom: 'Amine', email: 'a.elamrani@ytera.ma', role: 'ADMIN', actif: true, date: '01/03/2026', avatar: 'https://i.pravatar.cc/150?u=amine' },
-    { id: 2, nom: 'Fassi', prenom: 'Fatima Zahra', email: 'f.fassi@u-maroc.ac.ma', role: 'ETUDIANT', actif: true, date: '15/02/2026', avatar: 'https://i.pravatar.cc/150?u=fatima' },
-    { id: 3, nom: 'Benjelloun', prenom: 'Youssef', email: 'y.benjelloun@univ.ma', role: 'ETUDIANT', actif: false, date: '28/02/2026', avatar: 'https://i.pravatar.cc/150?u=youssef' },
-    { id: 4, nom: 'Bennani', prenom: 'Khadija', email: 'k.bennani@ytera.ma', role: 'ETUDIANT', actif: true, date: '04/03/2026', avatar: 'https://i.pravatar.cc/150?u=khadija' },
-    { id: 5, nom: 'Tazi', prenom: 'Mehdi', email: 'm.tazi@ecole.ma', role: 'ETUDIANT', actif: true, date: '02/03/2026', avatar: 'https://i.pravatar.cc/150?u=mehdi' },
-    { id: 6, nom: 'Alaoui', prenom: 'Laila', email: 'l.alaoui@ytera.ma', role: 'ADMIN', actif: true, date: '10/01/2026', avatar: 'https://i.pravatar.cc/150?u=laila' },
-    { id: 7, nom: 'Mansouri', prenom: 'Hassan', email: 'h.mansouri@univ.ma', role: 'ETUDIANT', actif: true, date: '20/02/2026', avatar: 'https://i.pravatar.cc/150?u=hassan' },
-    { id: 8, nom: 'Zouhairi', prenom: 'Sara', email: 's.zouhairi@ytera.ma', role: 'ETUDIANT', actif: true, date: '05/03/2026', avatar: 'https://i.pravatar.cc/150?u=sara' },
-    { id: 9, nom: 'Berrada', prenom: 'Omar', email: 'o.berrada@ytera.ma', role: 'ETUDIANT', actif: true, date: '06/03/2026', avatar: 'https://i.pravatar.cc/150?u=omar' },
-    { id: 10, nom: 'Cherkaoui', prenom: 'Zineb', email: 'z.cherkaoui@univ.ma', role: 'ETUDIANT', actif: true, date: '07/03/2026', avatar: 'https://i.pravatar.cc/150?u=zineb' },
-    { id: 11, nom: 'Filali', prenom: 'Issam', email: 'i.filali@ecole.ma', role: 'ADMIN', actif: true, date: '08/03/2026', avatar: 'https://i.pravatar.cc/150?u=issam' },
-    { id: 12, nom: 'Amal', prenom: 'Sofia', email: 's.amal@ytera.ma', role: 'ETUDIANT', actif: false, date: '09/03/2026', avatar: 'https://i.pravatar.cc/150?u=sofia' },
-    { id: 13, nom: 'Idrissi', prenom: 'Anas', email: 'a.idrissi@univ.ma', role: 'ETUDIANT', actif: true, date: '10/03/2026', avatar: 'https://i.pravatar.cc/150?u=anas' },
-    { id: 14, nom: 'Moussaoui', prenom: 'Kenza', email: 'k.moussaoui@ytera.ma', role: 'ETUDIANT', actif: true, date: '11/03/2026', avatar: 'https://i.pravatar.cc/150?u=kenza' },
-    { id: 15, nom: 'Lahlou', prenom: 'Rachid', email: 'r.lahlou@ecole.ma', role: 'ADMIN', actif: true, date: '12/03/2026', avatar: 'https://i.pravatar.cc/150?u=rachid' },
-];
+import { userApi } from '../../api/client';
 
 export default function UsersList() {
-    const [users, setUsers] = useState(MOCK_USERS);
+    const [users, setUsers] = useState([]);
     const [openMenu, setOpenMenu] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
@@ -35,19 +17,42 @@ export default function UsersList() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
-    const toggleStatus = (id) => {
-        setUsers(users.map(u => u.id === id ? { ...u, actif: !u.actif } : u));
+    const fetchUsers = async () => {
+        try {
+            const { data } = await userApi.getAll();
+            setUsers(data);
+        } catch (error) {
+            console.error('Failed to load users:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const toggleStatus = async (id) => {
+        const user = users.find(u => u.id === id);
+        try {
+            await userApi.update(id, { actif: !user.actif });
+            setUsers(users.map(u => u.id === id ? { ...u, actif: !u.actif } : u));
+        } catch (error) {
+            console.error('Failed to toggle status:', error);
+        }
         setOpenMenu(null);
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
-            setUsers(users.filter(u => u.id !== id));
-            setOpenMenu(null);
-            // Adjust page if empty after delete
-            if (paginatedUsers.length === 1 && currentPage > 1) {
-                setCurrentPage(currentPage - 1);
+            try {
+                await userApi.delete(id);
+                setUsers(users.filter(u => u.id !== id));
+                if (paginatedUsers.length === 1 && currentPage > 1) {
+                    setCurrentPage(currentPage - 1);
+                }
+            } catch (error) {
+                console.error('Failed to delete user:', error);
             }
+            setOpenMenu(null);
         }
     };
 
@@ -56,21 +61,24 @@ export default function UsersList() {
         setOpenMenu(null);
     };
 
-    const handleCreateAdmin = (data) => {
-        const newUser = {
-            id: users.length + 1,
-            ...data,
-            role: 'ADMIN',
-            actif: true,
-            date: new Date().toLocaleDateString('fr-FR')
-        };
-        setUsers([newUser, ...users]);
-        setIsModalOpen(false);
+    const handleCreateAdmin = async (data) => {
+        try {
+            const response = await userApi.create({ ...data, role: 'ADMIN' });
+            setUsers([response.data, ...users]);
+            setIsModalOpen(false);
+        } catch (error) {
+            console.error('Failed to create admin:', error);
+        }
     };
 
-    const handleUpdateUser = (data) => {
-        setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...data } : u));
-        setEditingUser(null);
+    const handleUpdateUser = async (data) => {
+        try {
+            await userApi.update(editingUser.id, data);
+            setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...data } : u));
+            setEditingUser(null);
+        } catch (error) {
+            console.error('Failed to update user:', error);
+        }
     };
 
     const handleFilterChange = (role) => {

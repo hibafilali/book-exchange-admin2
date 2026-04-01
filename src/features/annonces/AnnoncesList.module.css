@@ -236,3 +236,63 @@
 .rejectBtn:hover { background: #fee2e2; color: #b91c1c; border-color: #b91c1c; }
 .restoreBtn:hover { background: #eff6ff; color: #3b82f6; border-color: #3b82f6; }
 .viewBtn:hover { background: #f1f5f9; color: #ff5722; border-color: #ff5722; }
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.85rem 1.5rem;
+    border-top: 1px solid #f1f5f9;
+    background: white;
+}
+
+.pageInfo {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.pageInfo b {
+    color: #0f172a;
+}
+
+.paginationActions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.pageBtn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.pageBtn:hover:not(:disabled) {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+.activePage {
+    background: #ff5722 !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(255, 87, 34, 0.25);
+}
+
+.pageBtn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}

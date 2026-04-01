@@ -362,3 +362,108 @@
     .navInner { padding: 0 1rem; }
     .content { padding-left: 1rem; padding-right: 1rem; }
 }
+
+/* Notification Menu Enhancement */
+.notifWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.notifMenu {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    width: 320px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.notifHeader {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(255,255,255,0.02);
+}
+
+.notifHeader h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.notifList {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.emptyNotif {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.notifItem {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.2s;
+    cursor: default;
+}
+
+.notifItem:last-child {
+    border-bottom: none;
+}
+
+.notifItem:hover {
+    background: rgba(var(--accent-color-rgb), 0.03);
+}
+
+.notifUnread {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.notifIcon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: var(--bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notifContent {
+    flex: 1;
+    min-width: 0;
+}
+
+.notifTitle {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.notifMessage {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.notifDate {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}

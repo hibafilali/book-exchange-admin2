@@ -18,10 +18,19 @@ export default function AdminForm({ onSubmit, onCancel, initialData = null, isEd
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        
+        // Final validation
+        if (!formData.nom || !formData.prenom || !formData.email) {
+            alert('Veuillez remplir tous les champs obligatoires.');
+            return;
+        }
+
         const submissionData = { ...formData };
         if (isEdit && !submissionData.password) {
             delete submissionData.password;
         }
+        
+        console.log('Submitting form with data:', submissionData);
         onSubmit(submissionData);
     };
 

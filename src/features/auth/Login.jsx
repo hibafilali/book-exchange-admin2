@@ -23,22 +23,21 @@ export default function Login() {
         setError('');
         setIsLoading(true);
 
-        // Simuler un appel système
-        await new Promise(r => setTimeout(r, 1200));
-
-        const success = await login(email, password, role);
-        setIsLoading(false);
-
-        if (success) {
-            toast.success(`Connexion réussie ! Bienvenue ${isStudent ? 'Étudiant' : 'Admin'}`, { duration: 3000 });
-            if (role === 'ADMIN') {
-                navigate('/');
-            } else {
+        try {
+            await login(email, password);
+            toast.success(`Connexion réussie ! Bienvenue`, { duration: 3000 });
+            // La redirection est gérée par App.jsx PrivateRoute/RoleRedirect ou on peut forcer ici
+            if (isStudent) {
                 navigate('/student-dashboard');
+            } else {
+                navigate('/admin');
             }
-        } else {
-            toast.error("Identifiants invalides.");
-            setError(`Identifiants invalides pour l'espace ${isStudent ? 'Étudiant' : 'Admin'}.`);
+        } catch (err) {
+            const msg = err.response?.data?.error || "Identifiants invalides.";
+            toast.error(msg);
+            setError(msg);
+        } finally {
+            setIsLoading(false);
         }
     };
 

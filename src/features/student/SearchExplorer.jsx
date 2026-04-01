@@ -10,7 +10,8 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import ManualCard from './ManualCard';
-import { ALL_BOOKS, ETAT_LABELS, ETAT_COLORS, TYPE_LABELS, TYPE_COLORS } from '../../data/mockBooks';
+import { bookApi } from '../../api/client';
+import { ETAT_LABELS, ETAT_COLORS, TYPE_LABELS, TYPE_COLORS } from '../../data/mockBooks';
 import styles from './SearchExplorer.module.css';
 
 // Fix Leaflet icons issues with Webpack/Vite
@@ -21,11 +22,6 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// ISBN lookup map for "magic" auto-detection
-const ISBN_MAP = {};
-ALL_BOOKS.forEach(b => { ISBN_MAP[b.isbn] = b.titreAnnonce; });
-
-const FILIERES = [...new Set(ALL_BOOKS.map(b => b.filiere))].sort();
 const ETATS = ['NEUF', 'BON', 'ACCEPTABLE', 'USE'];
 const TYPES = ['VENTE', 'PRET', 'DON'];
 const SORT_OPTIONS = [
@@ -64,15 +60,15 @@ function ListItem({ annonce, onClick }) {
         <motion.div className={styles.listItem} onClick={onClick}
             initial={{ opacity: 0, x: -15 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }} whileHover={{ x: 4 }}>
-            <img src={annonce.photoUrl} alt={annonce.titreAnnonce} className={styles.listImg} />
+            <img src={annonce.exemplaire?.photoUrl || annonce.photoUrl} alt={annonce.exemplaire?.ouvrage?.titre} className={styles.listImg} />
             <div className={styles.listInfo}>
-                <h3>{annonce.titreAnnonce}</h3>
-                <p className={styles.listAuthor}>{annonce.auteur}</p>
+                <h3>{annonce.exemplaire?.ouvrage?.titre}</h3>
+                <p className={styles.listAuthor}>{annonce.exemplaire?.ouvrage?.auteur}</p>
                 <div className={styles.listMeta}>
-                    <span><MapPin size={13} /> {annonce.ville}</span>
+                    <span><MapPin size={13} /> {annonce.exemplaire?.proprietaire?.ville}</span>
                     <span><Eye size={13} /> {annonce.nbVues}</span>
-                    <span className={styles.listEtat} style={{ color: ETAT_COLORS[annonce.etat] }}>{ETAT_LABELS[annonce.etat]}</span>
-                    {annonce.nbOperations >= 3 && <span className={styles.listTrust}><ShieldCheck size={12} /> Vérifié</span>}
+                    <span className={styles.listEtat} style={{ color: ETAT_COLORS[annonce.exemplaire?.etat] }}>{ETAT_LABELS[annonce.exemplaire?.etat]}</span>
+                    {annonce.exemplaire?.proprietaire?.nbEchanges >= 3 && <span className={styles.listTrust}><ShieldCheck size={12} /> Vérifié</span>}
                 </div>
             </div>
             <div className={styles.listRight}>
@@ -113,7 +109,7 @@ function MapView({ results }) {
                     attribution='&copy; CARTO'
                 />
                 {results.map(b => {
-                    const basePoint = CITY_COORDS[b.ville] || [33.5, -7.5];
+                    const basePoint = CITY_COORDS[b.exemplaire?.proprietaire?.ville] || [33.5, -7.5];
                     // Petits décalages pour éviter que les livres d'une même ville soient superposés précisément
                     const lat = basePoint[0] + (Math.random() * 0.04 - 0.02);
                     const lng = basePoint[1] + (Math.random() * 0.04 - 0.02);
@@ -122,11 +118,11 @@ function MapView({ results }) {
                         <Marker key={b.id} position={[lat, lng]}>
                             <Popup className={styles.customPopup}>
                                 <div className={styles.popupInner}>
-                                    <img src={b.photoUrl} alt="" className={styles.popupImg} />
+                                    <img src={b.exemplaire?.photoUrl || b.photoUrl} alt="" className={styles.popupImg} />
                                     <div className={styles.popupDetails}>
-                                        <strong>{b.titreAnnonce}</strong>
+                                        <strong>{b.exemplaire?.ouvrage?.titre}</strong>
                                         <p>{b.typeEchange === 'VENTE' ? `${b.prixVente} DH` : TYPE_LABELS[b.typeEchange]}</p>
-                                        <span>📍 Campus {b.ville}</span>
+                                        <span>📍 Campus {b.exemplaire?.proprietaire?.ville}</span>
                                     </div>
                                 </div>
                             </Popup>
@@ -148,7 +144,7 @@ export default function SearchExplorer() {
 
     // State
     const [query, setQuery] = useState(initialQuery);
-    const [isbnDetected, setIsbnDetected] = useState(null);
+    const [allBooks, setAllBooks] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [viewMode, setViewMode] = useState('grid');
     const [sortBy, setSortBy] = useState('recent');
@@ -163,11 +159,31 @@ export default function SearchExplorer() {
     const [selectedFilieres, setSelectedFilieres] = useState([]);
     const [filiereSearch, setFiliereSearch] = useState('');
 
-    // Simulate loading delay on filter change
+    const FILIERES = useMemo(() => [...new Set(allBooks.map(b => b.exemplaire?.ouvrage?.categorie?.label || b.filiere).filter(Boolean))].sort(), [allBooks]);
+    const ISBN_MAP = useMemo(() => {
+        const map = {};
+        allBooks.forEach(b => { 
+            const isbn = b.exemplaire?.ouvrage?.isbn || b.isbn;
+            const titre = b.exemplaire?.ouvrage?.titre || b.titreAnnonce;
+            if(isbn) map[isbn] = titre; 
+        });
+        return map;
+    }, [allBooks]);
+
+    // Fetch Books from Backend
     useEffect(() => {
-        setIsLoading(true);
-        const t = setTimeout(() => setIsLoading(false), 700);
-        return () => clearTimeout(t);
+        const fetchBooks = async () => {
+            try {
+                setIsLoading(true);
+                const response = await bookApi.getAll();
+                setAllBooks(response.data);
+            } catch (error) {
+                console.error('Failed to fetch books:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchBooks();
     }, [query, selectedEtats, selectedType, selectedFilieres, maxPrice, sortBy]);
 
     // ISBN magic auto-detection
@@ -184,19 +200,25 @@ export default function SearchExplorer() {
 
     // Filter + Sort
     const results = useMemo(() => {
-        let filtered = ALL_BOOKS.filter(b => {
+        let filtered = allBooks.filter(b => {
+            const titre = b.exemplaire?.ouvrage?.titre || b.titreAnnonce || '';
+            const auteur = b.exemplaire?.ouvrage?.auteur || b.auteur || '';
+            const isbn = b.exemplaire?.ouvrage?.isbn || b.isbn || '';
+            const filiere = b.exemplaire?.ouvrage?.categorie?.label || b.filiere || '';
+            const etat = b.exemplaire?.etat || b.etat;
+
             if (query) {
                 const q = query.toLowerCase();
-                const matchText = b.titreAnnonce.toLowerCase().includes(q)
-                    || b.auteur.toLowerCase().includes(q)
-                    || b.isbn.replace(/-/g, '').includes(q.replace(/[-\s]/g, ''))
-                    || b.filiere.toLowerCase().includes(q);
+                const matchText = titre.toLowerCase().includes(q)
+                    || auteur.toLowerCase().includes(q)
+                    || isbn.replace(/-/g, '').includes(q.replace(/[-\s]/g, ''))
+                    || filiere.toLowerCase().includes(q);
                 if (!matchText) return false;
             }
             if (b.typeEchange === 'VENTE' && b.prixVente > maxPrice) return false;
-            if (selectedEtats.length > 0 && !selectedEtats.includes(b.etat)) return false;
+            if (selectedEtats.length > 0 && !selectedEtats.includes(etat)) return false;
             if (selectedType && b.typeEchange !== selectedType) return false;
-            if (selectedFilieres.length > 0 && !selectedFilieres.includes(b.filiere)) return false;
+            if (selectedFilieres.length > 0 && !selectedFilieres.includes(filiere)) return false;
             return true;
         });
 
@@ -207,7 +229,7 @@ export default function SearchExplorer() {
             default: filtered.sort((a, b) => new Date(b.datePublication) - new Date(a.datePublication));
         }
         return filtered;
-    }, [query, maxPrice, selectedEtats, selectedType, selectedFilieres, sortBy]);
+    }, [allBooks, query, maxPrice, selectedEtats, selectedType, selectedFilieres, sortBy]);
 
     const toggleEtat = (val) => setSelectedEtats(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
     const toggleFiliere = (val) => setSelectedFilieres(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
@@ -267,7 +289,7 @@ export default function SearchExplorer() {
                         <span className={styles.checkmark} style={selectedEtats.includes(e) ? { background: ETAT_COLORS[e], borderColor: ETAT_COLORS[e] } : {}}></span>
                         <span className={styles.checkDot} style={{ background: ETAT_COLORS[e] }}></span>
                         <span className={styles.checkLabel}>{ETAT_LABELS[e]}</span>
-                        <span className={styles.checkCount}>{ALL_BOOKS.filter(b => b.etat === e).length}</span>
+                        <span className={styles.checkCount}>{allBooks.filter(b => (b.exemplaire?.etat || b.etat) === e).length}</span>
                     </label>
                 ))}
             </div>
@@ -284,7 +306,7 @@ export default function SearchExplorer() {
                                 onChange={() => toggleFiliere(f)} />
                             <span className={styles.checkmark}></span>
                             <span className={styles.checkLabel}>{f}</span>
-                            <span className={styles.checkCount}>{ALL_BOOKS.filter(b => b.filiere === f).length}</span>
+                            <span className={styles.checkCount}>{allBooks.filter(b => (b.exemplaire?.ouvrage?.categorie?.label || b.filiere) === f).length}</span>
                         </label>
                     ))}
                 </div>
