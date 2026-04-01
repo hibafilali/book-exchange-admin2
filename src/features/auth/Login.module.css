@@ -1,0 +1,337 @@
+.page {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 50px;
+    /* High-end whitespace frame */
+    background: #F8FAFC;
+    position: relative;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* LEFT SIDE */
+.visualSide {
+    flex: 1.2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    height: 100vh;
+    max-width: 700px;
+}
+
+@media (max-width: 1024px) {
+    .visualSide {
+        display: none;
+    }
+}
+
+.visualContent {
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+}
+
+.illustrationWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.illustration {
+    width: 110%;
+    max-width: 650px;
+    max-height: 60vh;
+    height: auto;
+    margin-bottom: 1.5rem;
+}
+
+.visualText {
+    padding: 0 1rem;
+}
+
+.visualText h1 {
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: #0F172A;
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+}
+
+.visualText p {
+    font-size: 0.85rem;
+    color: #64748B;
+    line-height: 1.6;
+}
+
+/* Blobs */
+.blobOrange {
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    width: 120px;
+    height: 120px;
+    background: #FF5722;
+    opacity: 0.1;
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 40%;
+    filter: blur(40px);
+}
+
+.blobBlue {
+    position: absolute;
+    bottom: 20%;
+    right: 15%;
+    width: 180px;
+    height: 180px;
+    background: #3B82F6;
+    opacity: 0.1;
+    border-radius: 60% 40% 30% 70% / 50% 60% 40% 50%;
+    filter: blur(50px);
+}
+
+/* RIGHT SIDE */
+.formSide {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.loginCard {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 24px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.03),
+        0 15px 30px -15px rgba(0, 0, 0, 0.08);
+    transform: scale(0.95);
+    transform-origin: center;
+}
+
+.cardHeader {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem; /* Increased gap for logo breathing room */
+    margin-bottom: 0.5rem;
+}
+
+.cardTitle h2 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #0F172A;
+    letter-spacing: -0.02em;
+}
+
+.cardTitle p {
+    font-size: 0.75rem;
+    color: #475569; /* Darkened for accessibility */
+    font-weight: 500;
+}
+
+/* Role Toggle */
+.roleToggle {
+    display: flex;
+    border-bottom: 2px solid #E2E8F0;
+    gap: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.roleOption {
+    padding: 0.5rem 0;
+    position: relative;
+    border: none;
+    background: none;
+    color: #94A3B8;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.roleActive {
+    color: #FF5722;
+}
+
+.activeBar {
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #FF5722;
+}
+
+/* Form */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.inputGroup label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #475569;
+    padding-left: 0.15rem;
+}
+
+.field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.fieldIcon {
+    position: absolute;
+    left: 1rem;
+    color: #94A3B8;
+}
+
+.field input {
+    width: 100%;
+    height: 38px;
+    padding: 0 1rem 0 2.5rem;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    font-size: 0.8rem;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.field input:focus {
+    border-color: #FF5722;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(255, 87, 34, 0.1);
+}
+
+.submitBtn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(255, 87, 34, 0.15);
+    margin-top: 0.5rem;
+}
+
+.forgotPassword {
+    text-align: right;
+    margin-top: -0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.forgotPassword button {
+    background: none;
+    border: none;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.2s ease;
+}
+
+.forgotPassword button:hover {
+    color: #FF5722;
+    text-decoration: underline;
+}
+
+.submitBtn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.cardFooter {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #334155; /* Darkened for better accessibility/contrast */
+    font-weight: 500;
+}
+
+.cardFooter button {
+    background: none;
+    border: none;
+    color: #FF5722;
+    font-weight: 700;
+    cursor: pointer;
+    margin-left: 0.4rem;
+}
+
+/* Noise Texture Overlay */
+.noiseOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+@media (max-width: 640px) {
+    .containerSide {
+        padding: 1rem;
+    }
+
+    .loginCard {
+        padding: 24px;
+        max-width: 90%;
+        height: auto;
+        max-height: 90vh;
+        overflow-y: auto;
+        justify-content: center;
+    }
+}

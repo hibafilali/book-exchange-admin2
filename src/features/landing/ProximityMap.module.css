@@ -1,0 +1,176 @@
+.proximitySection {
+  padding: 2rem 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+.mainContainer {
+  max-width: 940px;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 40px;
+}
+
+/* Texte à gauche */
+.header {
+  flex: 1;
+  text-align: left;
+  color: var(--text-primary);
+  max-width: 380px;
+}
+
+.sectionTitle {
+  font-size: clamp(1.8rem, 3.2vw, 2.5rem);
+  font-weight: 900;
+  margin: 0 0 1rem 0;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: var(--text-primary);
+}
+
+.sectionSubtitle {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0 0 1.8rem 0;
+  font-weight: 500;
+}
+
+.brandText {
+  color: #EA580C;
+  font-weight: 900;
+}
+
+.highlightGreen {
+  color: #10B981;
+  font-weight: 700;
+  background-color: rgba(16, 185, 129, 0.12);
+  padding: 0.25rem 0.8rem;
+  border-radius: 99px;
+  display: inline-block;
+}
+
+/* Carte + liste à droite */
+.contentWrapper {
+  flex: 1.2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.mapWrapper {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  justify-content: center;
+}
+
+.moroccoSvg {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.05));
+  transition: all 0.6s ease;
+}
+
+/* Nodes de Villes */
+.nodePoint {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.centerDot {
+  width: 8px;
+  height: 8px;
+  background-color: #EA580C;
+  border-radius: 50%;
+  z-index: 2;
+  box-shadow: 0 0 12px rgba(234, 88, 12, 0.6);
+}
+
+.pulseCore {
+  width: 18px;
+  height: 18px;
+  background-color: #EA580C;
+  border-radius: 50%;
+  position: absolute;
+  z-index: 1;
+}
+
+.cityLabel {
+  position: absolute;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 3;
+  transition: all 0.3s ease;
+}
+
+/* CTA Button */
+.ctaButton {
+  margin-top: 5px;
+  padding: 0.85rem 2.2rem;
+  background: linear-gradient(135deg, #EA580C, #F97316);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 15px 35px rgba(234, 88, 12, 0.25);
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.ctaButton:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 40px rgba(234, 88, 12, 0.35);
+}
+
+.ctaArrow {
+  font-size: 1.2rem;
+  font-weight: 400;
+  transition: transform 0.3s ease;
+}
+
+.ctaButton:hover .ctaArrow {
+  transform: translateX(4px);
+}
+
+@media (max-width: 768px) {
+  .mainContainer {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .header {
+    text-align: center;
+    max-width: 100%;
+  }
+
+  .contentWrapper {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .mapWrapper {
+    max-width: 280px;
+  }
+}

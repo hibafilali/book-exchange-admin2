@@ -1,0 +1,57 @@
+.splashContainer {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    z-index: 99999;
+    overflow: hidden;
+}
+
+.centerStage {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4rem;
+}
+
+.logoWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loaderContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    width: 180px;
+}
+
+.progressBar {
+    width: 100%;
+    height: 3px;
+    background: #f1f7fe;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progressFill {
+    height: 100%;
+    background: linear-gradient(90deg, #FF5722, #FF8A65);
+    box-shadow: 0 0 8px rgba(255, 87, 34, 0.2);
+}
+
+.statusText {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #94a3b8;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}

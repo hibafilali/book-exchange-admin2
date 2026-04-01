@@ -1,0 +1,28 @@
+[0m[0m
+[0m[4mC:\Users\PC\Desktop\PFE_V1\PFE_Bourse_Manuels_Admin\src\components\ui\Modal.jsx[24m[0m
+[0m  [2m1:10[22m  [31merror[39m  'useState' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\PC\Desktop\PFE_V1\PFE_Bourse_Manuels_Admin\src\features\auth\AuthContext.jsx[24m[0m
+[0m   [2m2:10[22m  [31merror[39m  'useNavigate' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   [2mno-unused-vars[22m[0m
+[0m  [2m16:13[22m  [31merror[39m  Error: Calling setState synchronously within an effect can trigger cascading renders[0m
+[0m[0m
+[0mEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:[0m
+[0m* Update external systems with the latest state from React.[0m
+[0m* Subscribe for updates from some external system, calling setState in a callback function when external state changes.[0m
+[0m[0m
+[0mCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).[0m
+[0m[0m
+[0m  14 |             // Decode JWT or fetch user profile from API in real scenario[0m
+[0m  15 |             // Mocking for now:[0m
+[0m> 16 |             setUser({ role: 'ADMIN', name: 'Admin Demo' });[0m
+[0m     |             ^^^^^^^ Avoid calling setState() directly within an effect[0m
+[0m  17 |         }[0m
+[0m  18 |         setIsLoading(false);[0m
+[0m  19 |     }, []);  [2mreact-hooks/set-state-in-effect[22m[0m
+[0m  [2m49:14[22m  [31merror[39m  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       [2mreact-refresh/only-export-components[22m[0m
+[0m[0m
+[0m[4mC:\Users\PC\Desktop\PFE_V1\PFE_Bourse_Manuels_Admin\vite.config.js[24m[0m
+[0m  [2m10:25[22m  [31merror[39m  '__dirname' is not defined  [2mno-undef[22m[0m
+[0m[0m
+[0m[31m[1m✖ 5 problems (5 errors, 0 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[0m

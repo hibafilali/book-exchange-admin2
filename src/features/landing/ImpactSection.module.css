@@ -1,0 +1,129 @@
+.container {
+    padding: 2.5rem 5%;
+    max-width: 1100px;
+    width: 100%;
+    margin: 0 auto;
+    overflow-x: hidden;
+}
+
+/* Header Styles */
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.header h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+}
+
+.header p {
+    font-size: 1rem;
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+
+.titleUnderline {
+    width: 40px;
+    height: 3px;
+    background: #ff5722;
+    border-radius: 2px;
+}
+
+/* Grid Styles */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+/* Card Styles */
+.card {
+    background: #ffffff;
+    border: 1px solid #f0f0f0;
+    border-radius: 20px;
+    padding: 35px 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1),
+        box-shadow 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    cursor: default;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.iconWrapper {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 8px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cardNumber {
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 10px 0 5px;
+    letter-spacing: -0.04em;
+    line-height: 1;
+}
+
+
+
+.cardLabel {
+    font-size: 0.95rem;
+    color: #64748b;
+    line-height: 1.5;
+    max-width: 240px;
+    margin: 0 auto;
+    font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .container {
+        padding: 40px 5%;
+    }
+
+    .cardNumber {
+        font-size: 2.4rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .header h2 {
+        font-size: 1.7rem;
+    }
+
+    .card {
+        padding: 30px 20px;
+    }
+
+    .iconWrapper {
+        top: 15px;
+        left: 15px;
+    }
+}

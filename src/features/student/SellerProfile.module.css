@@ -1,0 +1,322 @@
+.page {
+    padding: 0 0 4rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ====== HEADER BANNER ====== */
+.headerWrap {
+    margin-bottom: 2rem;
+}
+.coverPhoto {
+    height: 200px;
+    width: 100%;
+    border-radius: 0 0 var(--border-radius-xl) var(--border-radius-xl);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(249, 115, 22, 0.2)), url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2000&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    box-shadow: var(--shadow-md);
+}
+
+.profileMetaBox {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.5rem;
+    padding: 0 2rem;
+    margin-top: -60px;
+    position: relative;
+    z-index: 10;
+}
+
+.avatarWrap {
+    position: relative;
+}
+.avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+    color: white;
+    font-size: 3rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 6px solid var(--bg-primary);
+    box-shadow: var(--shadow-md);
+}
+.verifiedBadge {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 32px;
+    height: 32px;
+    background: #10b981;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid var(--bg-primary);
+}
+
+.profileInfo {
+    flex: 1;
+    padding-bottom: 0.5rem;
+}
+.nameRow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+.nameRow h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+}
+.topSellerTag {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 12px;
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    font-size: 0.75rem;
+    font-weight: 800;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.statsRow {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+.ratingBadge {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: #f59e0b;
+    font-weight: 800;
+    font-size: 0.9rem;
+}
+.metaItem {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.profileActions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+}
+.msgBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--accent-color);
+    color: white;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px var(--accent-glow);
+}
+.msgBtn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px var(--accent-glow);
+}
+.actionButtonGroup {
+    display: flex;
+    gap: 0.5rem;
+}
+.iconBtn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+.iconBtn:hover {
+    border-color: var(--border-highlight);
+    background: var(--bg-primary);
+    transform: translateY(-2px);
+}
+
+/* ====== GRID LAYOUT ====== */
+.contentGrid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 2rem;
+    padding: 0 1.5rem;
+}
+
+/* ====== BENTO BOXES ====== */
+.bentoBox {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-xl);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-sm);
+}
+.bentoBox h3 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+.bio {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+.filiereTag {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    color: var(--accent-color);
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* STAT LIST */
+.statList {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.statLine {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.statLine span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+.statLine strong {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    font-weight: 800;
+}
+.iconBrand { color: var(--accent-color); }
+.iconGreen { color: #10b981; }
+.iconBlue { color: #3b82f6; }
+
+/* REVIEWS */
+.reviewsList {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+.reviewCard {
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.reviewCard:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+.reviewHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+.stars {
+    display: flex;
+    gap: 2px;
+}
+.reviewDate {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+.reviewText {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 0.4rem;
+    font-style: italic;
+}
+.reviewAuthor {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* ====== MAIN FEED ====== */
+.sectionHeader {
+    margin-bottom: 1.5rem;
+}
+.sectionHeader h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+.listingsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 1024px) {
+    .contentGrid {
+        grid-template-columns: 1fr;
+    }
+    .profileMetaBox {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-top: -50px;
+    }
+    .profileActions {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+    .msgBtn {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .listingsGrid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+    .statsRow {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+@media (max-width: 480px) {
+    .listingsGrid {
+        grid-template-columns: 1fr;
+    }
+}

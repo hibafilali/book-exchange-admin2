@@ -1,0 +1,171 @@
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-xl);
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.card:hover {
+    box-shadow: var(--hover-shadow, var(--shadow-xl));
+    border-color: var(--border-highlight);
+    transform: translateY(-4px);
+}
+
+/* Image Wrapper */
+.imageWrap {
+    position: relative;
+    aspect-ratio: 2/3;
+    overflow: hidden;
+    background: white; /* Clean background to blend any image edges */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0; /* Remove padding to fill the frame */
+    border-bottom: 1px solid var(--border-color); /* Light separator */
+}
+
+.image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Fill the whole box */
+    transition: transform 0.5s ease;
+}
+
+.card:hover .image { 
+    transform: scale(1.05); /* Simpler zoom effect */
+}
+
+/* Compact Badges */
+.typeRibbon {
+    position: absolute;
+    top: 8px;
+    left: 0;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0 8px 8px 0;
+    color: white;
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    z-index: 5;
+}
+
+.etatBadge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 0.15rem 0.45rem;
+    border-radius: 6px;
+    color: white;
+    font-size: 0.58rem;
+    font-weight: 800;
+    z-index: 5;
+}
+
+.popularBadge {
+    position: absolute;
+    top: 32px;
+    right: 8px;
+    padding: 0.12rem 0.45rem;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    color: white;
+    font-size: 0.58rem;
+    font-weight: 800;
+    z-index: 5;
+}
+
+.priceTag {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    padding: 0.18rem 0.5rem;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.95);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 0.65rem;
+    font-weight: 700;
+    z-index: 5;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* Favori button */
+.favBtn {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    border: none;
+    z-index: 5;
+}
+
+.favBtn:hover { transform: scale(1.1); }
+.favActive { color: #ef4444; }
+
+/* Body - Compact Typography */
+.body { 
+    padding: 0.5rem 0.6rem 0.6rem; 
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 0.15rem;
+}
+
+.author {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+
+.trustBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.45rem;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: 6px;
+    color: #10b981;
+    font-size: 0.62rem;
+    font-weight: 700;
+    margin-top: auto;
+}
+
+.meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.meta span { display: flex; align-items: center; gap: 0.2rem; }

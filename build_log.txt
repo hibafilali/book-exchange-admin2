@@ -1,0 +1,9 @@
+﻿[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mÔ£ô[39m 1780 modules transformed.
+rendering chunks...
+computing gzip size...
+[2m../PFE_Bourse_Manuels/public/admin/[22m[32mindex.html                 [39m[1m[2m  0.49 kB[22m[1m[22m[2m Ôöé gzip:  0.31 kB[22m
+[2m../PFE_Bourse_Manuels/public/admin/[22m[35massets/index-eYZMBpy0.css  [39m[1m[2m 48.07 kB[22m[1m[22m[2m Ôöé gzip:  8.74 kB[22m
+[2m../PFE_Bourse_Manuels/public/admin/[22m[36massets/index-DY7R1gmX.js   [39m[1m[2m278.41 kB[22m[1m[22m[2m Ôöé gzip: 87.78 kB[22m
+[32mÔ£ô built in 6.24s[39m
