@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BookOpen, Heart, TrendingUp, Wallet, Trophy, ArrowRight, Eye, PlusCircle, MessageCircle, Clock, Send, Target, Star, Award, Sparkles } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
+import { bookApi } from '../../api/client';
+import { getFullImageUrl } from '../../utils/imageHandler';
 import styles from './StudentHome.module.css';
 
 // Badge Colors (Pastels doux)
@@ -11,30 +13,8 @@ const TYPE_COLOR = { VENTE: '#9C4221', PRET: '#2B6CB0', DON: '#22543D' };
 const TYPE_LABEL = { VENTE: 'Vente', PRET: 'Prêt', DON: 'Don' };
 
 // ============================
-// MOCK DATA — Couvertures Réalistes
+// MOCK DATA (Remnants for UI density)
 // ============================
-const MOCK_RECOMMENDATIONS = [
-    { id: 101, titre: "Clean Code", auteur: "Robert C. Martin", prix: 75, photo: "/admin/books/clean-code.png" },
-    { id: 102, titre: "Design Patterns", auteur: "Gang of Four", prix: 95, photo: "/admin/books/design-patterns.png" },
-    { id: 103, titre: "Introduction to Algorithms", auteur: "Cormen et al.", prix: 108, photo: "/admin/books/intro-algorithms.png" },
-    { id: 104, titre: "Refactoring", auteur: "Martin Fowler", prix: 45, photo: "/admin/books/refactoring.png" },
-    { id: 105, titre: "Test-Driven Development", auteur: "Kent Beck", prix: null, photo: "/admin/books/tdd.png" },
-    { id: 106, titre: "System Design Interview", auteur: "Alex Xu", prix: 85, photo: "/admin/books/system-design.png" },
-];
-
-const MOCK_ANNONCES = [
-    { id: 1, titre: "Introduction to Algorithms", auteur: "Cormen et al.", type: "VENTE", prix: 98, photo: "/admin/books/intro-algorithms.png", filiere: "Informatique" },
-    { id: 2, titre: "Code Civil 2024", auteur: "Dalloz", type: "DON", prix: null, photo: "/admin/books/code-civil.png", filiere: "Droit" },
-    { id: 3, titre: "Principles of Economics", auteur: "N. Gregory Mankiw", type: "PRET", prix: null, photo: "/admin/books/economics.png", filiere: "Économie" },
-    { id: 4, titre: "Clean Code", auteur: "Robert C. Martin", type: "VENTE", prix: 75, photo: "/admin/books/clean-code.png", filiere: "Informatique" },
-    { id: 5, titre: "Gray's Anatomy", auteur: "Susan Standring", type: "VENTE", prix: 105, photo: "/admin/books/grays-anatomy.png", filiere: "Médecine" },
-    { id: 6, titre: "Refactoring", auteur: "Martin Fowler", type: "PRET", prix: null, photo: "/admin/books/refactoring.png", filiere: "Informatique" },
-    { id: 7, titre: "Droit Constitutionnel", auteur: "Michel Verpeaux", type: "VENTE", prix: 65, photo: "/admin/books/droit-constitutionnel.png", filiere: "Droit" },
-    { id: 8, titre: "Harrison's Medicine", auteur: "Kasper et al.", type: "VENTE", prix: 109, photo: "/admin/books/harrisons-medicine.png", filiere: "Médecine" },
-    { id: 9, titre: "Capital au XXIe siècle", auteur: "Thomas Piketty", type: "DON", prix: null, photo: "/admin/books/capital-piketty.png", filiere: "Économie" },
-    { id: 10, titre: "Design Patterns", auteur: "Gang of Four", type: "VENTE", prix: 85, photo: "/admin/books/design-patterns.png", filiere: "Informatique" },
-];
-
 const MOCK_EMPRUNTS = [
     { id: 201, titre: "Base de données relationnelles", rendu: "À rendre dans 3 jours", urgence: "haute", image: "/admin/books/intro-algorithms.png" },
     { id: 202, titre: "Architecture des Ordinateurs", rendu: "En cours (reste 12 j.)", urgence: "basse", image: "/admin/books/refactoring.png" },
@@ -53,56 +33,77 @@ const MOCK_LEADERBOARD = [
     { id: 3, pseudo: 'Omar', points: 125, rang: 3, color: '#b45309' },
 ];
 
-
-
 // ============================
 // COMPONENT
 // ============================
 export default function StudentHome() {
     const { user } = useAuth();
     const [imgErrors, setImgErrors] = useState({});
+    const [annonces, setAnnonces] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
 
+    useEffect(() => {
+        const fetchRecent = async () => {
+            try {
+                setIsLoading(true);
+                const response = await bookApi.getAll();
+                // Store all, we'll slice for different sections
+                setAnnonces(response.data);
+            } catch (error) {
+                console.error('Failed to fetch home data:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchRecent();
+    }, []);
+
     // ---- Reusable Book Card ----
-    const BookCard = ({ book, showBadge = false }) => (
-        <div className={styles.bookCard} onClick={() => navigate(`/student-dashboard/book/${book.id}`)}>
-            <div className={styles.bookCover}>
-                {imgErrors[book.id] ? (
-                    <div className={styles.bookFallback}><BookOpen size={24} /></div>
-                ) : (
-                    <img
-                        src={book.photo}
-                        alt={book.titre}
-                        loading="lazy"
-                        onError={() => setImgErrors(p => ({...p, [book.id]: true}))}
-                    />
-                )}
-                {/* Badge */}
-                {showBadge && book.type && (
-                    <span className={styles.badge} style={{ background: TYPE_BG[book.type], color: TYPE_COLOR[book.type] }}>
-                        {TYPE_LABEL[book.type]}
+    const BookCard = ({ book, showBadge = false }) => {
+        const titre = book.exemplaire?.ouvrage?.titre || book.titre || 'Sans titre';
+        const auteur = book.exemplaire?.ouvrage?.auteur || book.auteur || 'Auteur inconnu';
+        const photo = getFullImageUrl(book.exemplaire?.photoUrl || book.photo);
+        const prix = book.prixVente || book.prix;
+        const type = book.typeEchange || book.type;
+
+        return (
+            <div className={styles.bookCard} onClick={() => navigate(`/student-dashboard/book/${book.id}`)}>
+                <div className={styles.bookCover}>
+                    {imgErrors[book.id] ? (
+                        <div className={styles.bookFallback}><BookOpen size={24} /></div>
+                    ) : (
+                        <img
+                            src={photo}
+                            alt={titre}
+                            loading="lazy"
+                            onError={() => setImgErrors(p => ({...p, [book.id]: true}))}
+                        />
+                    )}
+                    {/* Badge */}
+                    {showBadge && type && (
+                        <span className={styles.badge} style={{ background: TYPE_BG[type], color: TYPE_COLOR[type] }}>
+                            {TYPE_LABEL[type]}
+                        </span>
+                    )}
+                    {/* Heart */}
+                    <button className={styles.heartBtn} onClick={e => e.stopPropagation()}>
+                        <Heart size={13} />
+                    </button>
+                </div>
+                <div className={styles.bookMeta}>
+                    <h4>{titre}</h4>
+                    <span className={styles.bookPrice}>
+                        {prix ? `${prix} DH` : <em className={styles.free}>Gratuit</em>}
                     </span>
-                )}
-                {/* Heart */}
-                <button className={styles.heartBtn} onClick={e => e.stopPropagation()}>
-                    <Heart size={13} />
-                </button>
+                    <span className={styles.bookAuthor}>{auteur}</span>
+                </div>
             </div>
-            <div className={styles.bookMeta}>
-                <h4>{book.titre}</h4>
-                <span className={styles.bookPrice}>
-                    {book.prix ? `${book.prix} DH` : <em className={styles.free}>Gratuit</em>}
-                </span>
-                <span className={styles.bookAuthor}>{book.auteur}</span>
-            </div>
-        </div>
-    );
+        );
+    };
 
     return (
         <div className={styles.page}>
-
-
-
             {/* ═══════ SPLIT 70 / 30 ═══════ */}
             <div className={styles.split}>
 
@@ -112,7 +113,7 @@ export default function StudentHome() {
                     {/* ═══════ HERO ═══════ */}
                     <header className={styles.hero}>
                         <div className={styles.heroText}>
-                            <h1>Hey {user?.name?.split(' ')[0] || 'Hiba'},</h1>
+                            <h1>Hey {user?.name?.split(' ')[0] || user?.prenom || 'Hiba'},</h1>
                             <p>Prête à faire de la place sur tes étagères aujourd'hui ?</p>
                             <div className={styles.heroActions}>
                                 <button className={styles.btnPrimary} onClick={() => navigate('/student-dashboard/publish')}>
@@ -129,7 +130,7 @@ export default function StudentHome() {
                             </motion.div>
                             <motion.div className={`${styles.stat} ${styles.statBlue}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .2 }}>
                                 <div className={styles.statIcon}><BookOpen size={15} /></div>
-                                <strong>12</strong><span>Annonces Actives</span>
+                                <strong>{annonces.length}</strong><span>Annonces Actives</span>
                             </motion.div>
                             <motion.div className={`${styles.stat} ${styles.statPurple}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .3 }}>
                                 <div className={styles.statIcon}><Award size={15} /></div>
@@ -138,32 +139,40 @@ export default function StudentHome() {
                         </div>
                     </header>
 
-                    {/* Slider : Recommandés */}
+                    {/* Slider : Recommandés (Shuffled subset of real data) */}
                     <section className={styles.sec}>
                         <div className={styles.secHead}>
-                            <h2><TrendingUp size={17}/> Recommandés pour votre filière</h2>
+                            <h2><TrendingUp size={17}/> Recommandés pour vous</h2>
                         </div>
                         <div className={styles.slider}>
-                            {MOCK_RECOMMENDATIONS.map(b => <BookCard key={b.id} book={b} />)}
+                            {isLoading ? (
+                                <div className={styles.loadingSmall}>Chargement...</div>
+                            ) : annonces.length > 0 ? (
+                                annonces.slice().reverse().slice(0, 6).map(b => <BookCard key={b.id} book={b} />)
+                            ) : (
+                                <div className={styles.emptySmall}>Aucun livre disponible.</div>
+                            )}
                         </div>
                     </section>
-
-
 
                     {/* Slider : Dernières Annonces */}
                     <section className={styles.sec}>
                         <div className={styles.secHead}>
                             <h2><Sparkles size={17}/> Dernières Annonces</h2>
-                            <button className={styles.viewAll} onClick={() => navigate('/student-dashboard/browse')}>
+                            <button className={styles.viewAll} onClick={() => navigate('/student-dashboard/search')}>
                                 Voir tout <ArrowRight size={13} />
                             </button>
                         </div>
                         <div className={styles.slider}>
-                            {MOCK_ANNONCES.map(b => <BookCard key={b.id} book={b} showBadge />)}
+                            {isLoading ? (
+                                <div className={styles.loadingSmall}>Chargement...</div>
+                            ) : annonces.length > 0 ? (
+                                annonces.slice(0, 6).map(b => <BookCard key={b.id} book={b} showBadge />)
+                            ) : (
+                                <div className={styles.emptySmall}>Soyez le premier à publier !</div>
+                            )}
                         </div>
                     </section>
-
-
 
                     {/* CTA Banner */}
                     <motion.div className={styles.cta} initial={{opacity:0,y:14}} whileInView={{opacity:1,y:0}} viewport={{once:true}}>
@@ -212,7 +221,7 @@ export default function StudentHome() {
                             <h3 className={styles.boxTitle}><Clock size={14} style={{color:'#f59e0b'}}/> Emprunts en cours</h3>
                             {MOCK_EMPRUNTS.map(e => (
                                 <div key={e.id} className={styles.emprunt}>
-                                    <img src={e.image} alt="" />
+                                    <img src={getFullImageUrl(e.image)} alt="" />
                                     <div>
                                         <span className={styles.empruntName}>{e.titre}</span>
                                         <span className={`${styles.empruntTag} ${e.urgence === 'haute' ? styles.urgent : styles.ok}`}>{e.rendu}</span>

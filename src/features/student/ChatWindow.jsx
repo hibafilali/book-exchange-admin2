@@ -1,91 +1,81 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Search, MoreVertical, Phone, Video, Info, Image as ImageIcon, Smile, Paperclip, MessageSquare, Calendar, MapPin, Clock, X } from 'lucide-react';
+import { Send, Search, MoreVertical, Phone, Video, Info, Image as ImageIcon, Smile, Paperclip, MessageSquare, Calendar, MapPin, Clock, X, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { conversationApi, bookApi } from '../../api/client';
+import { useAuth } from '../auth/useAuth';
 import styles from './ChatWindow.module.css';
-
-// ============================
-// MOCK DATA
-// ============================
-const MOCK_CONTACTS = [
-    { id: 1, name: 'Karim F.', avatar: 'K', lastMessage: 'Merci, à demain pour le livre !', time: '10:42', unread: 0, online: true },
-    { id: 2, name: 'Sofia M.', avatar: 'S', lastMessage: 'Est-ce que le livre est toujours dispo ?', time: 'Hier', unread: 2, online: false },
-    { id: 3, name: 'Youssef B.', avatar: 'Y', lastMessage: 'Ok ça marche.', time: 'Mar', unread: 0, online: true },
-    { id: 4, name: 'Leila K.', avatar: 'L', lastMessage: 'Je suis devant la BU.', time: 'Lun', unread: 1, online: false },
-    { id: 5, name: 'Ayoub H.', avatar: 'A', lastMessage: 'C\'est 150 DH dernier prix.', time: 'Dim', unread: 0, online: false },
-];
-
-const MOCK_MESSAGES = {
-    1: [
-        { id: 101, sender: 'them', text: 'Salut ! J\'ai vu ton annonce pour "Introduction to Algorithms"', time: '10:30' },
-        { id: 102, sender: 'me', text: 'Salut Karim ! Oui il est toujours disponible.', time: '10:35' },
-        { id: 103, sender: 'them', text: 'Super. On peut se croiser à la fac demain ?', time: '10:38' },
-        { id: 104, sender: 'me', text: 'Bien sûr, vers 14h à la cafétéria ?', time: '10:40' },
-        { id: 105, sender: 'them', text: 'Merci, à demain pour le livre !', time: '10:42' },
-        { 
-            id: 106, 
-            sender: 'them', 
-            type: 'appointment',
-            appointment: {
-                book: 'Designing Data-Intensive...',
-                time: 'Demain, 10:30',
-                place: 'Bibliothèque (BU)',
-                status: 'waiting'
-            },
-            time: '10:45'
-        }
-    ],
-    2: [
-        { id: 201, sender: 'them', text: 'Est-ce que le livre est toujours dispo ?', time: 'Hier' }
-    ],
-    3: [
-        { id: 301, sender: 'them', text: 'Ok ça marche.', time: 'Mar' }
-    ],
-    4: [
-        { id: 401, sender: 'them', text: 'Je suis devant la BU.', time: 'Lun' }
-    ],
-    5: [
-        { id: 501, sender: 'them', text: 'C\'est 150 DH dernier prix.', time: 'Dim' }
-    ]
-};
-
-const MOCK_STUDENT_BOOKS = [
-    { id: 1, title: 'Refactoring' },
-    { id: 2, title: 'Test-Driven Development' },
-    { id: 3, title: 'Clean Code' }
-];
 
 const CAMPUS_LOCATIONS = ['Bibliothèque (BU)', 'Cafétéria Centrale', 'Entrée Fac', 'Jardin des Sciences', 'Parking Étudiants'];
 
 export default function ChatWindow() {
-    const [contacts, setContacts] = useState(MOCK_CONTACTS);
-    const [selectedContact, setSelectedContact] = useState(MOCK_CONTACTS[0]);
-    const [messages, setMessages] = useState(MOCK_MESSAGES);
+    const { user } = useAuth();
+    const [conversations, setConversations] = useState([]);
+    const [selectedConversation, setSelectedConversation] = useState(null);
+    const [messages, setMessages] = useState([]);
+    const [userBooks, setUserBooks] = useState([]);
+    
+    const [isLoadingConvs, setIsLoadingConvs] = useState(true);
+    const [isLoadingMsgs, setIsLoadingMsgs] = useState(false);
     const [inputText, setInputText] = useState('');
-    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showMeetingModal, setShowMeetingModal] = useState(false);
-    const [meetingData, setMeetingData] = useState({ book: MOCK_STUDENT_BOOKS[0].title, location: CAMPUS_LOCATIONS[0], time: 'Demain, 10:00' });
+    const [meetingData, setMeetingData] = useState({ book: '', location: CAMPUS_LOCATIONS[0], time: 'Demain, 10:00' });
+    
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
 
-    const activeMessages = messages[selectedContact.id] || [];
-
     // Pastels for avatars
     const AVATAR_COLORS = ['#fecdd3', '#fed7aa', '#fef08a', '#d9f99d', '#bbf7d0', '#bfdbfe', '#e9d5ff'];
-    const getAvatarBg = (id) => AVATAR_COLORS[id % AVATAR_COLORS.length];
+    const getAvatarBg = (id) => AVATAR_COLORS[(id || 0) % AVATAR_COLORS.length];
 
-    const toggleEmojiPicker = () => {
-        setShowEmojiPicker(!showEmojiPicker);
-        if(!showEmojiPicker) toast?.success('Sélecteur d\'emojis ouvert (simulation)', { icon: '😃' });
-    };
+    // Initial Load: Conversations & User Books (for meeting proposal)
+    useEffect(() => {
+        const initChat = async () => {
+            try {
+                setIsLoadingConvs(true);
+                const [convRes, booksRes] = await Promise.all([
+                    conversationApi.getConversations(),
+                    bookApi.getAll() // In real app, would be getMyBooks
+                ]);
+                setConversations(convRes.data);
+                
+                // Filter books belonging to me (simplified for demo)
+                setUserBooks(booksRes.data.filter(b => b.exemplaire?.proprietaire_id === user?.id).slice(0, 5));
+                
+                if (convRes.data.length > 0) {
+                    setSelectedConversation(convRes.data[0]);
+                }
+            } catch (error) {
+                console.error('Failed to init chat:', error);
+                toast.error('Erreur lors du chargement des conversations');
+            } finally {
+                setIsLoadingConvs(false);
+            }
+        };
+        initChat();
+    }, [user?.id]);
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            // Replace by your upload logic
-            alert(`Préparation du fichier : ${file.name}`);
-        }
-    };
+    // Load Messages when selection changes
+    useEffect(() => {
+        if (!selectedConversation) return;
+
+        const fetchMessages = async () => {
+            try {
+                setIsLoadingMsgs(true);
+                const response = await conversationApi.getMessages(selectedConversation.id);
+                setMessages(response.data);
+            } catch (error) {
+                console.error('Failed to fetch messages:', error);
+            } finally {
+                setIsLoadingMsgs(false);
+            }
+        };
+        fetchMessages();
+
+        // Optional: Polling for new messages (every 5 seconds)
+        const interval = setInterval(fetchMessages, 5000);
+        return () => clearInterval(interval);
+    }, [selectedConversation?.id]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -93,53 +83,60 @@ export default function ChatWindow() {
 
     useEffect(() => {
         scrollToBottom();
-    }, [activeMessages]);
+    }, [messages]);
 
-    const handleSendMessage = (e) => {
-        e.preventDefault();
-        if (!inputText.trim()) return;
+    const handleSendMessage = async (e) => {
+        if (e) e.preventDefault();
+        if (!inputText.trim() || !selectedConversation) return;
 
-        const newMsg = {
-            id: Date.now(),
-            sender: 'me',
-            text: inputText,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-
-        setMessages(prev => ({
-            ...prev,
-            [selectedContact.id]: [...(prev[selectedContact.id] || []), newMsg]
-        }));
-        
-        // Update last message in contacts
-        setContacts(prev => prev.map(c => 
-            c.id === selectedContact.id 
-                ? { ...c, lastMessage: inputText, time: newMsg.time, unread: 0 } 
-                : c
-        ));
-
+        const textToSend = inputText;
         setInputText('');
+
+        try {
+            await conversationApi.sendMessage(selectedConversation.id, {
+                text: textToSend,
+                type: 'text'
+            });
+            // Refresh messages immediately
+            const response = await conversationApi.getMessages(selectedConversation.id);
+            setMessages(response.data);
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            toast.error('Échec de l\'envoi');
+            setInputText(textToSend); // Restore text on failure
+        }
     };
 
-    const handleProposeMeeting = () => {
-        const newMsg = {
-            id: Date.now(),
-            sender: 'me',
-            type: 'appointment',
-            appointment: {
-                ...meetingData,
-                status: 'waiting'
-            },
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
+    const handleProposeMeeting = async () => {
+        if (!selectedConversation) return;
 
-        setMessages(prev => ({
-            ...prev,
-            [selectedContact.id]: [...(prev[selectedContact.id] || []), newMsg]
-        }));
-        
-        setShowMeetingModal(false);
-        toast.success('Rendez-vous proposé !');
+        try {
+            await conversationApi.sendMessage(selectedConversation.id, {
+                text: `Proposition de RDV : ${meetingData.book}`,
+                type: 'appointment',
+                appointmentDetails: meetingData
+            });
+            setShowMeetingModal(false);
+            toast.success('Rendez-vous proposé !');
+            
+            // Refresh
+            const response = await conversationApi.getMessages(selectedConversation.id);
+            setMessages(response.data);
+        } catch (error) {
+            console.error('Failed to propose meeting:', error);
+            toast.error('Erreur lors de la proposition');
+        }
+    };
+
+    // Helper to get partner info
+    const getPartner = (conv) => {
+        const isUser1 = conv.user1_id === user?.id;
+        return {
+            id: isUser1 ? conv.user2_id : conv.user1_id,
+            nom: isUser1 ? conv.user2_nom : conv.user1_nom,
+            prenom: isUser1 ? conv.user2_prenom : conv.user1_prenom,
+            avatar: isUser1 ? conv.user2_prenom?.charAt(0) : conv.user1_prenom?.charAt(0)
+        };
     };
 
     return (
@@ -155,44 +152,50 @@ export default function ChatWindow() {
                 </div>
 
                 <div className={styles.contactList}>
-                    {contacts.map(c => (
-                        <div 
-                            key={c.id} 
-                            className={`${styles.contactCard} ${selectedContact.id === c.id ? styles.activeContact : ''}`}
-                            onClick={() => setSelectedContact(c)}
-                        >
-                            <div className={styles.avatarWrap}>
-                                <div className={styles.avatar} style={{ background: getAvatarBg(c.id) }}>{c.avatar}</div>
-                                {c.online && <div className={styles.onlineBadge}></div>}
-                            </div>
-                            <div className={styles.contactInfo}>
-                                <div className={styles.contactTop}>
-                                    <strong>{c.name}</strong>
-                                    <span>{c.time}</span>
+                    {isLoadingConvs ? (
+                        <div className={styles.loadingSide}><Loader2 className={styles.spin} /></div>
+                    ) : conversations.length === 0 ? (
+                        <div className={styles.emptySide}>Aucune conversation</div>
+                    ) : conversations.map(c => {
+                        const partner = getPartner(c);
+                        return (
+                            <div 
+                                key={c.id} 
+                                className={`${styles.contactCard} ${selectedConversation?.id === c.id ? styles.activeContact : ''}`}
+                                onClick={() => setSelectedConversation(c)}
+                            >
+                                <div className={styles.avatarWrap}>
+                                    <div className={styles.avatar} style={{ background: getAvatarBg(partner.id) }}>{partner.avatar}</div>
                                 </div>
-                                <div className={styles.contactBottom}>
-                                    <p className={c.unread > 0 ? styles.unreadText : ''}>{c.lastMessage}</p>
-                                    {c.unread > 0 && <div className={styles.unreadBadge}>{c.unread}</div>}
+                                <div className={styles.contactInfo}>
+                                    <div className={styles.contactTop}>
+                                        <strong>{partner.prenom} {partner.nom}</strong>
+                                        <span>{c.last_message_at ? new Date(c.last_message_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span>
+                                    </div>
+                                    <div className={styles.contactBottom}>
+                                        <p>Cliquer pour voir la discussion</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 
             {/* ====== RIGHT: CHAT AREA ====== */}
             <div className={styles.chatArea}>
-                {selectedContact ? (
+                {selectedConversation ? (
                     <>
                         <div className={styles.chatHeader}>
                             <div className={styles.chatHeaderInfo}>
                                 <div className={styles.avatarWrap}>
-                                    <div className={styles.avatar} style={{ background: getAvatarBg(selectedContact.id) }}>{selectedContact.avatar}</div>
-                                    {selectedContact.online && <div className={styles.onlineBadge}></div>}
+                                    <div className={styles.avatar} style={{ background: getAvatarBg(getPartner(selectedConversation).id) }}>
+                                        {getPartner(selectedConversation).avatar}
+                                    </div>
                                 </div>
                                 <div>
-                                    <strong>{selectedContact.name}</strong>
-                                    <span>{selectedContact.online ? 'En ligne' : 'Hors ligne'}</span>
+                                    <strong>{getPartner(selectedConversation).prenom} {getPartner(selectedConversation).nom}</strong>
+                                    <span>Discussion sécurisée</span>
                                 </div>
                             </div>
                             <div className={styles.chatHeaderActions}>
@@ -201,73 +204,74 @@ export default function ChatWindow() {
                         </div>
 
                         <div className={styles.chatMessages}>
-                            <AnimatePresence mode="popLayout" key={`conversation-${selectedContact.id}`}>
-                                {activeMessages.map((msg, index) => {
-                                    const isMe = msg.sender === 'me';
-                                    const isAppointment = msg.type === 'appointment';
+                            {isLoadingMsgs && messages.length === 0 ? (
+                                <div className={styles.loadingMsgs}><Loader2 className={styles.spin} /></div>
+                            ) : (
+                                <AnimatePresence mode="popLayout" key={`conversation-${selectedConversation.id}`}>
+                                    {messages.map((msg) => {
+                                        const isMe = msg.sender_id === user?.id;
+                                        const isAppointment = msg.message_type === 'APPOINTMENT';
+                                        let appDetails = null;
+                                        if (isAppointment && msg.metadata) {
+                                            try { appDetails = typeof msg.metadata === 'string' ? JSON.parse(msg.metadata) : msg.metadata; } catch(e) { console.error(e); }
+                                        }
 
-                                    return (
-                                        <motion.div 
-                                            key={msg.id}
-                                            initial={{ opacity: 0, y: 15 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.3, ease: 'easeOut' }}
-                                            className={`${styles.messageRow} ${isMe ? styles.messageMe : styles.messageThem}`}
-                                        >
-                                            {!isMe && (
-                                                <div className={styles.msgAvatar} style={{ background: getAvatarBg(selectedContact.id) }}>{selectedContact.avatar}</div>
-                                            )}
-                                            
-                                            {isAppointment ? (
-                                                <div className={`${styles.appointmentCardMsg} ${isMe ? styles.apMe : styles.apThem}`}>
-                                                    <div className={styles.apHeader}>
-                                                        <Calendar size={18} />
-                                                        <span>Proposition de RDV</span>
+                                        return (
+                                            <motion.div 
+                                                key={msg.id}
+                                                initial={{ opacity: 0, y: 15 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.3 }}
+                                                className={`${styles.messageRow} ${isMe ? styles.messageMe : styles.messageThem}`}
+                                            >
+                                                {!isMe && (
+                                                    <div className={styles.msgAvatar} style={{ background: getAvatarBg(getPartner(selectedConversation).id) }}>
+                                                        {getPartner(selectedConversation).avatar}
                                                     </div>
-                                                    <div className={styles.apBody}>
-                                                        <p className={styles.apTargetBook}><strong>{msg.appointment.book}</strong></p>
-                                                        <div className={styles.apDetails}>
-                                                            <span><Clock size={14} /> {msg.appointment.time}</span>
-                                                            <span><MapPin size={14} /> {msg.appointment.location || msg.appointment.place}</span>
+                                                )}
+                                                
+                                                {isAppointment && appDetails ? (
+                                                    <div className={`${styles.appointmentCardMsg} ${isMe ? styles.apMe : styles.apThem}`}>
+                                                        <div className={styles.apHeader}>
+                                                            <Calendar size={18} />
+                                                            <span>Proposition de RDV</span>
+                                                        </div>
+                                                        <div className={styles.apBody}>
+                                                            <p className={styles.apTargetBook}><strong>{appDetails.book}</strong></p>
+                                                            <div className={styles.apDetails}>
+                                                                <span><Clock size={14} /> {appDetails.time}</span>
+                                                                <span><MapPin size={14} /> {appDetails.location}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className={styles.apFooter}>
+                                                            {isMe ? (
+                                                                <span className={styles.apStatusWaiting}>En attente de confirmation...</span>
+                                                            ) : (
+                                                                <div className={styles.apActions}>
+                                                                    <button className={styles.btnConfirmAp} onClick={() => toast.success('RDV Confirmé !')}>Confirmer</button>
+                                                                    <button className={styles.btnRefuseAp}>Refuser</button>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                    <div className={styles.apFooter}>
-                                                        {isMe ? (
-                                                            <span className={styles.apStatusWaiting}>En attente de confirmation...</span>
-                                                        ) : (
-                                                            <div className={styles.apActions}>
-                                                                <button className={styles.btnConfirmAp} onClick={() => toast.success('RDV Confirmé !')}>Confirmer</button>
-                                                                <button className={styles.btnRefuseAp}>Refuser</button>
-                                                            </div>
-                                                        )}
+                                                ) : (
+                                                    <div className={`${styles.bubble} ${isMe ? styles.bubbleMe : styles.bubbleThem}`}>
+                                                        {msg.message_text}
+                                                        <span className={styles.msgTime}>
+                                                            {new Date(msg.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                                                        </span>
                                                     </div>
-                                                </div>
-                                            ) : (
-                                                <div className={`${styles.bubble} ${isMe ? styles.bubbleMe : styles.bubbleThem}`}>
-                                                    {msg.text}
-                                                    <span className={styles.msgTime}>{msg.time}</span>
-                                                </div>
-                                            )}
-                                        </motion.div>
-                                    )
-                                })}
-                            </AnimatePresence>
+                                                )}
+                                            </motion.div>
+                                        )
+                                    })}
+                                </AnimatePresence>
+                            )}
                             <div ref={messagesEndRef} />
                         </div>
 
                         <form className={styles.chatInputArea} onSubmit={handleSendMessage}>
-                            <input 
-                                type="file" 
-                                ref={fileInputRef} 
-                                style={{ display: 'none' }} 
-                                onChange={handleFileChange}
-                            />
-                            
-                             <button type="button" className={styles.attachBtn} onClick={() => fileInputRef.current?.click()} title="Joindre un fichier">
-                                <Paperclip size={20} />
-                            </button>
-                            
-                            <button type="button" className={`${styles.attachBtn} ${styles.btnRdv}`} onClick={() => setShowMeetingModal(true)} title="Fixer un Rendez-vous">
+                            <button type="button" className={`${styles.attachBtn} ${styles.btnRdv}`} onClick={() => setShowMeetingModal(true)}>
                                 <Calendar size={20} />
                                 <span>Fixer RDV</span>
                             </button>
@@ -279,10 +283,7 @@ export default function ChatWindow() {
                                 onChange={(e) => setInputText(e.target.value)}
                             />
                             
-                            <button type="button" className={styles.attachBtn} onClick={toggleEmojiPicker} title="Ajouter un emoji">
-                                <Smile size={20} />
-                            </button>
-                            <button type="submit" className={styles.sendBtn} disabled={!inputText.trim()} title="Envoyer">
+                            <button type="submit" className={styles.sendBtn} disabled={!inputText.trim()}>
                                 <Send size={18} />
                             </button>
                         </form>
@@ -309,8 +310,11 @@ export default function ChatWindow() {
                                                     value={meetingData.book} 
                                                     onChange={(e) => setMeetingData({...meetingData, book: e.target.value})}
                                                 >
-                                                    {MOCK_STUDENT_BOOKS.map(b => (
-                                                        <option key={b.id} value={b.title}>{b.title}</option>
+                                                    <option value="">Sélectionnez un livre...</option>
+                                                    {userBooks.map(b => (
+                                                        <option key={b.id} value={b.exemplaire?.ouvrage?.titre || b.titreAnnonce}>
+                                                            {b.exemplaire?.ouvrage?.titre || b.titreAnnonce}
+                                                        </option>
                                                     ))}
                                                 </select>
                                             </div>

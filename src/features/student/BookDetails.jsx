@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -7,8 +7,10 @@ import {
     ChevronLeft, ChevronRight, MessageCircle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { bookApi } from '../../api/client';
+import { bookApi, conversationApi } from '../../api/client';
 import { TYPE_COLORS, ETAT_LABELS, ETAT_COLORS } from '../../data/mockBooks';
+import { useAuth } from '../auth/useAuth';
+import { getFullImageUrl } from '../../utils/imageHandler';
 import ManualCard from './ManualCard';
 import styles from './BookDetails.module.css';
 
@@ -32,6 +34,7 @@ const fadeUp = { hidden: { opacity: 0, y: 25 }, visible: { opacity: 1, y: 0, tra
 // COMPONENT
 // ============================
 export default function BookDetails() {
+    const { user } = useAuth();
     const { id } = useParams();
     const navigate = useNavigate();
     const [book, setBook] = useState(null);
@@ -86,10 +89,31 @@ export default function BookDetails() {
 
     const slugify = (text) => text.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
-    const handleSendContact = () => {
-        if (!contactMsg.trim()) return;
-        setContactSent(true);
-        setTimeout(() => { setShowContact(false); setContactSent(false); setContactMsg(''); }, 2000);
+    const handleSendContact = async () => {
+        if (!contactMsg.trim() || !book.exemplaire?.proprietaire_id) return;
+        
+        try {
+            // 1. Start or get conversation
+            const convRes = await conversationApi.startConversation(book.exemplaire.proprietaire_id);
+            const convId = convRes.data.conversationId;
+
+            // 2. Send initial message
+            await conversationApi.sendMessage(convId, {
+                text: contactMsg,
+                type: 'text'
+            });
+
+            setContactSent(true);
+            toast.success('Message envoyé !');
+            
+            // 3. Redirect to messages after a short delay
+            setTimeout(() => { 
+                navigate('/student-dashboard/messages');
+            }, 1500);
+        } catch (error) {
+            console.error('Failed to send contact message:', error);
+            toast.error('Erreur lors de l\'envoi du message');
+        }
     };
 
     const nextPhoto = () => setSelectedPhoto(p => (p + 1) % photos.length);
@@ -109,7 +133,7 @@ export default function BookDetails() {
                 {/* ——— LEFT: Gallery ——— */}
                 <motion.div className={styles.gallery} variants={fadeUp}>
                     <div className={styles.manualWrapper}>
-                        <img src={photos[selectedPhoto]} alt={book.exemplaire?.ouvrage?.titre} className={styles.manualCover} />
+                        <img src={getFullImageUrl(photos[selectedPhoto])} alt={book.exemplaire?.ouvrage?.titre} className={styles.manualCover} />
                         {photos.length > 1 && (
                             <>
                                 <button className={`${styles.navBtn} ${styles.navLeft}`} onClick={prevPhoto}><ChevronLeft size={20} /></button>
@@ -123,7 +147,7 @@ export default function BookDetails() {
                             {photos.map((p, i) => (
                                 <button key={i} className={`${styles.thumb} ${i === selectedPhoto ? styles.thumbActive : ''}`}
                                     onClick={() => setSelectedPhoto(i)}>
-                                    <img src={p} alt={`Photo ${i + 1}`} />
+                                    <img src={getFullImageUrl(p)} alt={`Photo ${i + 1}`} />
                                 </button>
                             ))}
                         </div>

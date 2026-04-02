@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
-import { ShieldAlert, CheckCircle, Trash2, ArrowRight } from 'lucide-react';
+import { ShieldAlert, CheckCircle, Trash2, ArrowRight, Eye, User, FileText, Calendar, Info } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { plainteApi } from '../../api/client';
+import Modal from '../../components/ui/Modal';
+import { getFullImageUrl } from '../../utils/imageHandler';
 import styles from './Moderation.module.css';
 
 export default function Moderation() {
     const [reports, setReports] = useState([]);
     const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedReport, setSelectedReport] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const loadReports = async () => {
         try {
@@ -25,10 +29,12 @@ export default function Moderation() {
             const formatted = response.data.map(r => ({
                 id: r.id,
                 type: typeMap[r.type] || r.type,
-                date: new Date(r.created_at).toLocaleDateString(),
+                date: new Date(r.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
                 reporter: r.plaignant_nom || 'Utilisateur inconnu',
                 reported: r.reported_item ? `${r.reported_item} (${r.reported_user})` : (r.reported_user || 'Signalement Général'),
                 subject: r.sujet,
+                description: r.description || "Aucune description fournie.",
+                proofUrl: r.preuve_url,
                 status: r.status === 'RESOLU' ? 'Resolved' : 'Pending',
                 severity: r.type === 'FRAUDE' || r.type === 'COMPORTEMENT' ? 'High' : 'Medium' 
             }));
@@ -50,6 +56,9 @@ export default function Moderation() {
         try {
             await plainteApi.updateStatus(id, 'RESOLU');
             setReports(reports.map(r => r.id === id ? { ...r, status: 'Resolved' } : r));
+            if (selectedReport?.id === id) {
+                setSelectedReport({ ...selectedReport, status: 'Resolved' });
+            }
             toast.success("Plainte marquée comme résolue.");
         } catch (err) {
             toast.error("Erreur lors de la mise à jour.");
@@ -57,9 +66,13 @@ export default function Moderation() {
     };
 
     const deleteReport = (id) => {
-        // Technically hide it or map it to another DB column if we add physical delete
         setReports(reports.filter(r => r.id !== id));
         toast.success("Signalement archivé de l'historique.");
+    };
+
+    const handleViewDetails = (report) => {
+        setSelectedReport(report);
+        setIsModalOpen(true);
     };
 
     const displayedReports = reports.filter(r =>
@@ -119,6 +132,14 @@ export default function Moderation() {
                         </div>
 
                         <div className={styles.actionsCol}>
+                            <button 
+                                className={`${styles.iconAction} ${styles.viewBtn}`} 
+                                onClick={() => handleViewDetails(report)}
+                                title="Voir les détails"
+                            >
+                                <Eye size={18} />
+                            </button>
+
                             {report.status === 'Pending' ? (
                                 <>
                                     <button 
@@ -150,6 +171,86 @@ export default function Moderation() {
                     <div className={styles.emptyState}>Aucun signalement en attente.</div>
                 )}
             </div>
+
+            {/* Détails de la plainte Modal */}
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title="Détails du Signalement"
+            >
+                {selectedReport && (
+                    <div className={styles.detailContainer}>
+                        <div className={styles.detailHeader}>
+                            <div className={`${styles.detailBadge} ${styles[selectedReport.severity.toLowerCase()]}`}>
+                                {selectedReport.type}
+                            </div>
+                            <h2 className={styles.detailTitle}>{selectedReport.subject}</h2>
+                        </div>
+
+                        <div className={styles.detailInfoGrid}>
+                            <div className={styles.infoItem}>
+                                <div className={styles.infoLabel}><User size={14} /> Plaignant</div>
+                                <div className={styles.infoValue}>{selectedReport.reporter}</div>
+                            </div>
+                            <div className={styles.infoItem}>
+                                <div className={styles.infoLabel}><ArrowRight size={14} /> Mis en cause</div>
+                                <div className={styles.infoValue}>{selectedReport.reported}</div>
+                            </div>
+                            <div className={styles.infoItem}>
+                                <div className={styles.infoLabel}><Calendar size={14} /> Date</div>
+                                <div className={styles.infoValue}>{selectedReport.date}</div>
+                            </div>
+                            <div className={styles.infoItem}>
+                                <div className={styles.infoLabel}><Info size={14} /> Statut</div>
+                                <div className={`${styles.statusBadge} ${selectedReport.status === 'Pending' ? styles.pending : styles.resolved}`}>
+                                    {selectedReport.status === 'Pending' ? 'En attente' : 'Résolu'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className={styles.descriptionSection}>
+                            <h3 className={styles.sectionTitle}><FileText size={16} /> Description des faits</h3>
+                            <div className={styles.descriptionContent}>
+                                {selectedReport.description}
+                            </div>
+                        </div>
+
+                        {selectedReport.proofUrl && (
+                            <div className={styles.proofSection}>
+                                <h3 className={styles.sectionTitle}>Preuve fournie</h3>
+                                <div className={styles.proofImageWrapper}>
+                                    <img 
+                                        src={getFullImageUrl(selectedReport.proofUrl)} 
+                                        alt="Preuve" 
+                                        className={styles.proofImage}
+                                        onError={(e) => e.target.src = 'https://via.placeholder.com/400x200?text=Image+non+disponible'}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        <div className={styles.modalActions}>
+                            {selectedReport.status === 'Pending' && (
+                                <button 
+                                    className={styles.primaryActionBtn}
+                                    onClick={() => {
+                                        resolveReport(selectedReport.id);
+                                        setIsModalOpen(false);
+                                    }}
+                                >
+                                    <CheckCircle size={18} /> Marquer comme résolu
+                                </button>
+                            )}
+                            <button 
+                                className={styles.secondaryActionBtn}
+                                onClick={() => setIsModalOpen(false)}
+                            >
+                                Fermer
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 }

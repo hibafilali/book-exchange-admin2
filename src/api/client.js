@@ -55,4 +55,11 @@ export const authApi = {
     getMe: () => api.get('/auth/me')
 };
 
+export const conversationApi = {
+    getConversations: () => api.get('/conversations'),
+    getMessages: (id) => api.get(`/conversations/${id}/messages`),
+    sendMessage: (id, data) => api.post(`/conversations/${id}/messages`, data),
+    startConversation: (recepteurId) => api.post('/conversations/start', { recepteurId })
+};
+
 export default api;
