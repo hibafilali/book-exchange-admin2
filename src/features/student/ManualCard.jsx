@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { useFavorites } from '../../context/FavoritesContext';
 import { TYPE_LABELS, TYPE_COLORS, ETAT_LABELS, ETAT_COLORS } from '../../data/mockBooks';
 import styles from './ManualCard.module.css';
+import { getFullImageUrl } from '../../utils/imageHandler';
 
 const TYPE_CONFIG = {
     VENTE: { label: TYPE_LABELS.VENTE, gradient: 'var(--gradient-vente)', shadow: 'var(--shadow-vente)', color: TYPE_COLORS.VENTE },
@@ -44,7 +45,7 @@ export default function ManualCard({ annonce, onCardClick, index = 0 }) {
         >
             {/* Image */}
             <div className={styles.imageWrap}>
-                <img src={annonce.exemplaire?.photoUrl || annonce.photoUrl} alt={annonce.exemplaire?.ouvrage?.titre || 'Annonce sans titre'} className={styles.image} loading="lazy" />
+                <img src={getFullImageUrl(annonce.exemplaire?.photoUrl || annonce.photoUrl)} alt={annonce.exemplaire?.ouvrage?.titre || 'Annonce sans titre'} className={styles.image} loading="lazy" />
 
                 {/* Type ribbon */}
                 <div className={styles.typeRibbon} style={{ background: typeConf.gradient }}>

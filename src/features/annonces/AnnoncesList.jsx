@@ -3,27 +3,11 @@ import { CheckCircle, XCircle, Search, Eye, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import styles from './AnnoncesList.module.css';
+import { getFullImageUrl } from '../../utils/imageHandler';
 import { bookApi } from '../../api/client';
 import Modal from '../../components/ui/Modal';
 
-// Import des assets réels (fallback)
-import book1 from '../../assets/book1.png';
-import book2 from '../../assets/book2.png';
-import book3 from '../../assets/book3.png';
-import book4 from '../../assets/book4.png';
-import book5 from '../../assets/book5.png';
-
-const MOCK_IMAGES = [book1, book2, book3, book4, book5];
-const MOCK_ANNONCES = []; // Kept to satisfy potential unused imports issues, but empty.
-
-const getFullImageUrl = (url, id) => {
-    // Les URLs relatives (comme /admin/books/...) venant de la BDD sont factices 
-    // car le backend ne sert pas encore de fichiers statiques.
-    if (!url || !url.startsWith('http')) {
-        return MOCK_IMAGES[(Math.max(1, id || 1)) % MOCK_IMAGES.length];
-    }
-    return url;
-};
+const DEFAULT_BOOK_IMAGE = 'https://via.placeholder.com/150x200?text=Pas+d\'image';
 
 export default function AnnoncesList() {
     const [annonces, setAnnonces] = useState([]);
@@ -52,7 +36,7 @@ export default function AnnoncesList() {
                           : a.status === 'REJETEE' ? 'Refusée' 
                           : 'En attente',
                     etudiant: `${proprietaire.nom || ''} ${proprietaire.prenom || ''}`.trim() || 'Inconnu',
-                    image: getFullImageUrl(a.exemplaire?.photoUrl, a.id),
+                    image: getFullImageUrl(a.exemplaire?.photoUrl),
                     description: a.description || 'Aucune description fournie.',
                     datePublication: a.datePublication ? new Date(a.datePublication).toLocaleDateString() : 'N/A',
                     categorie: ouvrage.categorie?.label || 'Non classé',

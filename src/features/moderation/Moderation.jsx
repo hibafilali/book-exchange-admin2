@@ -27,7 +27,7 @@ export default function Moderation() {
                 type: typeMap[r.type] || r.type,
                 date: new Date(r.created_at).toLocaleDateString(),
                 reporter: r.plaignant_nom || 'Utilisateur inconnu',
-                reported: r.concerne_id || 'System/Inconnu', // Optional in our DB, defaulting for UI
+                reported: r.reported_item ? `${r.reported_item} (${r.reported_user})` : (r.reported_user || 'Signalement Général'),
                 subject: r.sujet,
                 status: r.status === 'RESOLU' ? 'Resolved' : 'Pending',
                 severity: r.type === 'FRAUDE' || r.type === 'COMPORTEMENT' ? 'High' : 'Medium' 

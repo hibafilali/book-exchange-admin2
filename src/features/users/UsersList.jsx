@@ -12,6 +12,7 @@ export default function UsersList() {
     const [editingUser, setEditingUser] = useState(null);
     const [filterRole, setFilterRole] = useState('ALL');
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -87,9 +88,15 @@ export default function UsersList() {
         setCurrentPage(1); // Reset to first page when filtering
     };
 
-    const filteredUsers = filterRole === 'ALL'
-        ? users
-        : users.filter(user => user.role === filterRole);
+    const filteredUsers = users.filter(user => {
+        const matchesRole = filterRole === 'ALL' || user.role === filterRole;
+        const searchLower = searchQuery.toLowerCase();
+        const matchesSearch = 
+            user.nom?.toLowerCase().includes(searchLower) ||
+            user.prenom?.toLowerCase().includes(searchLower) ||
+            user.email?.toLowerCase().includes(searchLower);
+        return matchesRole && matchesSearch;
+    });
 
     // Calc pagination
     const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
@@ -138,25 +145,39 @@ export default function UsersList() {
             <div className={`glass-panel ${styles.tableContainer}`}>
                 <div className={styles.tableHeader}>
                     <h3>Liste des inscrits</h3>
-                    <div className={styles.filters}>
-                        <div className={styles.customSelectWrapper}>
-                            <button
-                                className={styles.customSelectTrigger}
-                                onClick={() => setIsFilterOpen(!isFilterOpen)}
-                            >
-                                <span>
-                                    {filterRole === 'ALL' ? 'Tous les rôles' :
-                                        filterRole === 'ETUDIANT' ? 'Étudiants' : 'Administrateurs'}
-                                </span>
-                                <MoreVertical size={16} className={isFilterOpen ? styles.rotate : ''} />
-                            </button>
-                            {isFilterOpen && (
-                                <div className={styles.customSelectDropdown}>
-                                    <button onClick={() => handleFilterChange('ALL')} className={filterRole === 'ALL' ? styles.activeOption : ''}>Tous les rôles</button>
-                                    <button onClick={() => handleFilterChange('ETUDIANT')} className={filterRole === 'ETUDIANT' ? styles.activeOption : ''}>Étudiants</button>
-                                    <button onClick={() => handleFilterChange('ADMIN')} className={filterRole === 'ADMIN' ? styles.activeOption : ''}>Administrateurs</button>
-                                </div>
-                            )}
+                    <div className={styles.tableActions}>
+                        <div className={styles.searchWrapper}>
+                            <input 
+                                type="text" 
+                                placeholder="Rechercher un utilisateur..." 
+                                className={styles.searchInput}
+                                value={searchQuery}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                            />
+                        </div>
+                        <div className={styles.filters}>
+                            <div className={styles.customSelectWrapper}>
+                                <button
+                                    className={styles.customSelectTrigger}
+                                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                                >
+                                    <span>
+                                        {filterRole === 'ALL' ? 'Tous les rôles' :
+                                            filterRole === 'ETUDIANT' ? 'Étudiants' : 'Administrateurs'}
+                                    </span>
+                                    < MoreVertical size={16} className={isFilterOpen ? styles.rotate : ''} />
+                                </button>
+                                {isFilterOpen && (
+                                    <div className={styles.customSelectDropdown}>
+                                        <button onClick={() => handleFilterChange('ALL')} className={filterRole === 'ALL' ? styles.activeOption : ''}>Tous les rôles</button>
+                                        <button onClick={() => handleFilterChange('ETUDIANT')} className={filterRole === 'ETUDIANT' ? styles.activeOption : ''}>Étudiants</button>
+                                        <button onClick={() => handleFilterChange('ADMIN')} className={filterRole === 'ADMIN' ? styles.activeOption : ''}>Administrateurs</button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
