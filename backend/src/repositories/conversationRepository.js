@@ -18,7 +18,10 @@ class ConversationRepository {
 
     async findMessagesByConversationId(conversationId) {
         const query = `
-            SELECT m.*, u.prenom as sender_name
+            SELECT m.*, 
+                   u.nom as sender_nom, 
+                   u.prenom as sender_prenom, 
+                   u.avatarUrl as sender_avatar
             FROM messages m
             JOIN users u ON m.sender_id = u.id
             WHERE m.conversation_id = ?

@@ -131,12 +131,21 @@ export default function ChatWindow() {
     // Helper to get partner info
     const getPartner = (conv) => {
         const isUser1 = conv.user1_id === user?.id;
+        const p_nom = isUser1 ? conv.user2_nom : conv.user1_nom;
+        const p_prenom = isUser1 ? conv.user2_prenom : conv.user1_prenom;
+        const p_id = isUser1 ? conv.user2_id : conv.user1_id;
+        
         return {
-            id: isUser1 ? conv.user2_id : conv.user1_id,
-            nom: isUser1 ? conv.user2_nom : conv.user1_nom,
-            prenom: isUser1 ? conv.user2_prenom : conv.user1_prenom,
-            avatar: isUser1 ? conv.user2_prenom?.charAt(0) : conv.user1_prenom?.charAt(0)
+            id: p_id,
+            nom: p_nom || '',
+            prenom: p_prenom || '',
+            display: (p_prenom && p_nom) ? `${p_prenom} ${p_nom}` : (p_prenom || p_nom || 'Utilisateur'),
+            avatar: (p_prenom || p_nom || '?').charAt(0).toUpperCase()
         };
+    };
+
+    const getAvatarLetter = (nom, prenom) => {
+        return (prenom || nom || '?').charAt(0).toUpperCase();
     };
 
     return (
@@ -169,7 +178,7 @@ export default function ChatWindow() {
                                 </div>
                                 <div className={styles.contactInfo}>
                                     <div className={styles.contactTop}>
-                                        <strong>{partner.prenom} {partner.nom}</strong>
+                                        <strong>{partner.display}</strong>
                                         <span>{c.last_message_at ? new Date(c.last_message_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span>
                                     </div>
                                     <div className={styles.contactBottom}>
@@ -194,7 +203,7 @@ export default function ChatWindow() {
                                     </div>
                                 </div>
                                 <div>
-                                    <strong>{getPartner(selectedConversation).prenom} {getPartner(selectedConversation).nom}</strong>
+                                    <strong>{getPartner(selectedConversation).display}</strong>
                                     <span>Discussion sécurisée</span>
                                 </div>
                             </div>
@@ -225,8 +234,8 @@ export default function ChatWindow() {
                                                 className={`${styles.messageRow} ${isMe ? styles.messageMe : styles.messageThem}`}
                                             >
                                                 {!isMe && (
-                                                    <div className={styles.msgAvatar} style={{ background: getAvatarBg(getPartner(selectedConversation).id) }}>
-                                                        {getPartner(selectedConversation).avatar}
+                                                    <div className={styles.msgAvatar} style={{ background: getAvatarBg(msg.sender_id) }} title={`${msg.sender_prenom || ''} ${msg.sender_nom || ''}`}>
+                                                        {getAvatarLetter(msg.sender_nom, msg.sender_prenom)}
                                                     </div>
                                                 )}
                                                 
