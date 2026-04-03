@@ -4,30 +4,74 @@ import { useAuth } from '../../features/auth/useAuth';
 import { 
     Search, User, LogOut, Settings, 
     ChevronDown, Shield, Lock, Eye, EyeOff, X, Save,
-    BellRing
+    BellRing, ShieldAlert, BookPlus, Check 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { notificationApi } from '../../api/client';
 import styles from './Header.module.css';
 
 export default function Header() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-
-    const [showProfile, setShowProfile] = useState(false);
     const [searchFilter, setSearchFilter] = useState('all');
+    const [showProfile, setShowProfile] = useState(false);
     
     // Password Modal State
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [showPass, setShowPass] = useState(false);
     const [passData, setPassData] = useState({ old: '', new: '', confirm: '' });
-
     const profileRef = useRef();
+    const notificationRef = useRef();
+
+    // Notifications State
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [notifications, setNotifications] = useState([]);
+    const [showNotifications, setShowNotifications] = useState(false);
+
+    useEffect(() => {
+        if (user?.id) {
+            fetchUnreadCount();
+        }
+    }, [user?.id]);
+
+    const fetchUnreadCount = async () => {
+        try {
+            const res = await notificationApi.getUnreadCount(user.id);
+            setUnreadCount(res.data.count);
+        } catch (error) {
+            console.error('Fetch unread count error:', error);
+        }
+    };
+
+    const fetchNotifications = async () => {
+        try {
+            const res = await notificationApi.getByUserId(user.id);
+            setNotifications(res.data);
+            setShowNotifications(!showNotifications);
+        } catch (error) {
+            console.error('Fetch notifications error:', error);
+        }
+    };
+
+    const handleMarkAllRead = async () => {
+        try {
+            await notificationApi.markAllAsRead(user.id);
+            setUnreadCount(0);
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+            toast.success("Toutes les notifications marquées comme lues.");
+        } catch (error) {
+            toast.error("Erreur lors de la mise à jour.");
+        }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (profileRef.current && !profileRef.current.contains(event.target)) {
                 setShowProfile(false);
+            }
+            if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+                setShowNotifications(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -110,11 +154,72 @@ export default function Header() {
 
             <div className={styles.rightSection}>
                 {/* Notification Bell */}
-                <button className={styles.iconBtn}>
-                    <BellRing size={19} />
-                    <span className={styles.badge}>3</span>
-                    <div className={styles.pulseBadge}></div>
-                </button>
+                <div className={styles.dropdownContainer} ref={notificationRef}>
+                    <button className={styles.iconBtn} onClick={fetchNotifications}>
+                        <BellRing size={19} />
+                        {unreadCount > 0 && (
+                            <>
+                                <span className={styles.badge}>{unreadCount}</span>
+                                <div className={styles.pulseBadge}></div>
+                            </>
+                        )}
+                    </button>
+
+                    <AnimatePresence>
+                        {showNotifications && (
+                            <motion.div 
+                                className={styles.notificationDropdown}
+                                variants={dropdownVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                            >
+                                <div className={styles.notifHeader}>
+                                    <h3>Notifications</h3>
+                                    {unreadCount > 0 && (
+                                        <button onClick={handleMarkAllRead} className={styles.markReadBtn}>
+                                            <Check size={14} /> Tout lire
+                                        </button>
+                                    )}
+                                </div>
+                                <div className={styles.notifList}>
+                                    {notifications.length === 0 ? (
+                                        <div className={styles.emptyNotif}>
+                                            <BellRing size={24} />
+                                            <p>Aucune notification</p>
+                                        </div>
+                                    ) : (
+                                        notifications.map(n => (
+                                            <div 
+                                                key={n.id} 
+                                                className={`${styles.notifItem} ${!n.is_read ? styles.unreadItem : ''}`}
+                                                onClick={async () => {
+                                                    if (!n.is_read) {
+                                                        await notificationApi.markRead(n.id);
+                                                        setUnreadCount(prev => Math.max(0, prev - 1));
+                                                    }
+                                                    setShowNotifications(false);
+                                                    if (n.type === 'PLAINTE') navigate('/admin/moderation');
+                                                    else navigate('/admin/annonces');
+                                                }}
+                                            >
+                                                <div className={styles.notifIcon}>
+                                                    {n.type === 'PLAINTE' ? <ShieldAlert size={16} color="#ef4444" /> : <BookPlus size={16} color="#3b82f6" />}
+                                                </div>
+                                                <div className={styles.notifContent}>
+                                                    <p className={styles.notifTitle}>{n.titre}</p>
+                                                    <p className={styles.notifMessage}>{n.message}</p>
+                                                    <p className={styles.notifTime}>{new Date(n.created_at).toLocaleDateString()} à {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                                </div>
+                                                {!n.is_read && <div className={styles.unreadDot}></div>}
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
 
                 {/* Profile Section */}
                 <div className={styles.dropdownContainer} ref={profileRef}>

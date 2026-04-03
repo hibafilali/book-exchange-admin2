@@ -45,4 +45,15 @@ router.put('/:userId/read-all', async (req, res) => {
     }
 });
 
+// Mark a single notification as read
+router.put('/:id/read', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('UPDATE notifications SET is_read = true WHERE id = ?', [id]);
+        res.json({ message: 'Notification marked as read' });
+    } catch (error) {
+        res.status(500).json({ id, error: error.message });
+    }
+});
+
 export default router;

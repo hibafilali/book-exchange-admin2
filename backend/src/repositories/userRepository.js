@@ -16,6 +16,11 @@ class UserRepository {
         return rows[0];
     }
 
+    async findByRole(role) {
+        const [rows] = await pool.query('SELECT * FROM users WHERE role = ?', [role]);
+        return rows;
+    }
+
     async create(userData) {
         const { nom, filiere, etablissement, ville, nbEchanges, avatarUrl, email } = userData;
         const [result] = await pool.query(

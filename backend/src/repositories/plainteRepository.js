@@ -13,6 +13,15 @@ class PlainteRepository {
             data.description, 
             data.preuve_url || null
         ]);
+
+        // Notify Admins
+        const notificationService = (await import('../services/notificationService.js')).default;
+        notificationService.notifyAdmins(
+            'Nouvelle plainte reçue',
+            `Une nouvelle plainte a été déposée concernant "${data.sujet}".`,
+            'PLAINTE'
+        );
+
         return result.insertId;
     }
 

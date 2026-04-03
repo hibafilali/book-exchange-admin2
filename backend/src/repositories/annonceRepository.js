@@ -140,6 +140,15 @@ class AnnonceRepository {
 
             await connection.commit();
             console.log('--- ANNONCE CREATED SUCCESSFULLY IN DB. ID:', annonceResult.insertId, '---');
+            
+            // 4. Notify Admins
+            const notificationService = (await import('../services/notificationService.js')).default;
+            notificationService.notifyAdmins(
+                'Nouvelle annonce à modérer',
+                `Un étudiant a publié le manuel: "${data.titre}". Merci d'examiner l'annonce.`,
+                'ANNONCE'
+            );
+
             return { id: annonceResult.insertId, status };
         } catch (error) {
             console.error('--- CREATE AD FAILED IN REPOSITORY ---', error);

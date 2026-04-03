@@ -41,7 +41,8 @@ export const userApi = {
 export const notificationApi = {
     getByUserId: (userId) => api.get(`/notifications/${userId}`),
     getUnreadCount: (userId) => api.get(`/notifications/${userId}/unread-count`),
-    markAllAsRead: (userId) => api.put(`/notifications/${userId}/read-all`)
+    markAllAsRead: (userId) => api.put(`/notifications/${userId}/read-all`),
+    markRead: (id) => api.put(`/notifications/${id}/read`)
 };
 
 export const plainteApi = {
