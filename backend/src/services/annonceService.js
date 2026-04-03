@@ -40,9 +40,12 @@ class AnnonceService {
         return result;
     }
 
-    async createAnnonce(data) {
-        // Enforce userId: 1 until global Auth is finished
-        const userId = 1;
+    async getAnnoncesByUserId(userId) {
+        return await annonceRepository.findByUserId(userId);
+    }
+
+    async createAnnonce(data, userId) {
+        if (!userId) throw new Error('User ID is required');
         return await annonceRepository.createWithTransaction(data, userId);
     }
 }

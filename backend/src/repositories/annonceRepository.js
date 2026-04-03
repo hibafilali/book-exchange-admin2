@@ -39,6 +39,26 @@ class AnnonceRepository {
         return rows.length > 0 ? this._formatNested(rows)[0] : null;
     }
 
+    async findByUserId(userId) {
+        const query = `
+            SELECT 
+                a.id as annonce_id, a.typeEchange, a.prixVente, a.nbVues, a.description, a.status, a.datePublication,
+                e.id as exemplaire_id, e.etat, e.photoUrl,
+                o.id as ouvrage_id, o.titre, o.auteur, o.isbn,
+                c.id as categorie_id, c.label as categorie_label,
+                u.id as proprietaire_id, u.nom, u.filiere, u.etablissement, u.ville, u.nbEchanges, u.avatarUrl
+            FROM annonces a
+            INNER JOIN exemplaires e ON a.exemplaire_id = e.id
+            INNER JOIN ouvrages o ON e.ouvrage_id = o.id
+            LEFT JOIN categories c ON o.categorie_id = c.id
+            INNER JOIN users u ON e.proprietaire_id = u.id
+            WHERE u.id = ?
+            ORDER BY a.datePublication DESC
+        `;
+        const [rows] = await pool.query(query, [userId]);
+        return this._formatNested(rows);
+    }
+
     async updateStatus(id, status) {
         await pool.query('UPDATE annonces SET status = ? WHERE id = ?', [status, id]);
         return true;
@@ -65,8 +85,11 @@ class AnnonceRepository {
             }
 
             // 2. Insert into exemplaires
-            // Note: photoUrl is currently mocked as the physical upload isn't handled yet
-            const photoUrl = '/uploads/default-book.png'; 
+            // photos are passed as an array in data.photoUrls from the controller
+            const photoUrl = (data.photoUrls && data.photoUrls.length > 0) 
+                ? data.photoUrls[0] 
+                : '/uploads/default-book.png';
+
             const [exemplaireResult] = await connection.query(
                 'INSERT INTO exemplaires (ouvrage_id, proprietaire_id, etat, photoUrl) VALUES (?, ?, ?, ?)',
                 [ouvrageId, userId, data.etat, photoUrl]
@@ -89,8 +112,10 @@ class AnnonceRepository {
             );
 
             await connection.commit();
+            console.log('--- ANNONCE CREATED SUCCESSFULLY IN DB. ID:', annonceResult.insertId, '---');
             return { id: annonceResult.insertId, status };
         } catch (error) {
+            console.error('--- CREATE AD FAILED IN REPOSITORY ---', error);
             await connection.rollback();
             throw error;
         } finally {

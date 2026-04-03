@@ -1,0 +1,35 @@
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+console.log('Verifying credentials loading from .env:');
+console.log('DB_HOST:', process.env.DB_HOST);
+console.log('DB_USER:', process.env.DB_USER);
+console.log('DB_PASS:', process.env.DB_PASS ? '(set)' : '(not set)');
+console.log('DB_NAME:', process.env.DB_NAME);
+
+if (!process.env.DB_PASS) {
+    console.error('ERROR: DB_PASS is missing!');
+    process.exit(1);
+}
+
+const pool = mysql.createPool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+});
+
+try {
+    const [rows] = await pool.query('SELECT 1 as result');
+    console.log('Database connection SUCCESSFUL!', rows);
+    process.exit(0);
+} catch (e) {
+    console.error('Database connection FAILED:', e.message);
+    process.exit(1);
+}

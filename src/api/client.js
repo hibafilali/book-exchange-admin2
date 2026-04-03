@@ -20,8 +20,12 @@ api.interceptors.request.use(config => {
 
 export const bookApi = {
     getAll: () => api.get('/annonces'),
+    getMy: () => api.get('/annonces/my'),
     getById: (id) => api.get(`/annonces/${id}`),
-    create: (data) => api.post('/annonces', data),
+    create: (data) => {
+        // If data is FormData, axios handles the Content-Type automatically
+        return api.post('/annonces', data);
+    },
     updateStatus: (id, status) => api.put(`/annonces/${id}/status`, { status })
 };
 

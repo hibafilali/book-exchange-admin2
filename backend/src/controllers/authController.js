@@ -66,11 +66,21 @@ class AuthController {
             const user = users[0];
 
             // Comparer avec le mdp haché
-            const isMatch = await bcrypt.compare(password, user.password_hash);
+            let isMatch = false;
+
+            if (user.password_hash) {
+                // If it looks like a bcrypt hash
+                if (user.password_hash.startsWith('$2a$') || user.password_hash.startsWith('$2b$')) {
+                    isMatch = await bcrypt.compare(password, user.password_hash);
+                } else {
+                    isMatch = (password === user.password_hash);
+                }
+            }
+            
             if (!isMatch) {
                 // Pour les anciens comptes de test sans password_hash, vérifier password direct
                 if (user.password && user.password === password) {
-                     // Support migration
+                     isMatch = true;
                 } else {
                      return res.status(401).json({ error: 'Email ou mot de passe incorrect.' });
                 }

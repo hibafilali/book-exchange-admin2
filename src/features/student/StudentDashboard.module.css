@@ -200,6 +200,14 @@
 
 /* --- INVENTORY (Visual Book Cards) --- */
 .inventoryList { display: flex; flex-direction: column; gap: 1rem; }
+.emptyInventory {
+    padding: 2rem;
+    text-align: center;
+    color: #64748b;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px dashed #e2e8f0;
+}
 .inventoryCard {
     display: flex; gap: 1.25rem; padding: 1.25rem; border-radius: 16px; background: var(--bg-primary);
     border: 1px solid var(--border-color); transition: all 0.25s ease;

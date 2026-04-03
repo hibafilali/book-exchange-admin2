@@ -12,11 +12,11 @@ import { bookApi, dashboardApi } from '../../api/client';
 import ManualCard from './ManualCard';
 import styles from './StudentDashboard.module.css';
 
-// Status badge mapping
+// Status badge mapping - matching DB ENUMs: 'ACTIF', 'ATTENTE', 'EXPIREE'
 const STATUS_STYLES = {
-    VALIDEE: { bg: 'rgba(16,185,129,0.15)', color: '#10b981', icon: CheckCircle, label: 'En ligne' },
-    ATTENTE: { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b', icon: Clock, label: 'En revue' },
-    EXPIREE: { bg: 'rgba(239,68,68,0.15)', color: '#ef4444', icon: XCircle, label: 'Expirée' },
+    ACTIF:   { bg: 'rgba(16,185,129,0.15)', color: '#10b981', icon: CheckCircle, label: 'En ligne' },
+    ATTENTE: { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b', icon: Clock,       label: 'En revue' },
+    EXPIREE: { bg: 'rgba(239,68,68,0.15)', color: '#ef4444', icon: XCircle,     label: 'Expirée' },
 };
 
 // ============================
@@ -31,6 +31,9 @@ export default function StudentDashboard() {
     const [dashboardFeatures, setDashboardFeatures] = useState({ stats: null, actions: [], appointments: [], wishes: [] });
     const [isLoading, setIsLoading] = useState(true);
     
+    const [myAnnonces, setMyAnnonces] = useState([]);
+    const [activeFilter, setActiveFilter] = useState('Tous');
+    
     // Profile Logic
     const [isEditing, setIsEditing] = useState(false);
     const [tempName, setTempName] = useState(user?.name || '');
@@ -41,12 +44,14 @@ export default function StudentDashboard() {
         const fetchDashboardData = async () => {
             try {
                 setIsLoading(true);
-                const [booksRes, featuresRes] = await Promise.all([
+                const [myBooksRes, allBooksRes, featuresRes] = await Promise.all([
+                    bookApi.getMy(),
                     bookApi.getAll(),
-                    dashboardApi.getStats(1) // Mock user 1
+                    dashboardApi.getStats(user?.id || 1)
                 ]);
-                setAllBooks(booksRes.data);
+                setAllBooks(allBooksRes.data || []);
                 setDashboardFeatures(featuresRes.data);
+                setMyAnnonces(myBooksRes.data || []);
             } catch (error) {
                 console.error('Failed to fetch data:', error);
             } finally {
@@ -58,11 +63,14 @@ export default function StudentDashboard() {
 
     const favoritedBooks = allBooks.filter(b => favoritedIds.includes(b.id));
 
-    // Dynamic listings mapping grabbing first 3 for visual preview
-    const myListings = allBooks.slice(0, 3).map((b, i) => ({
-        ...b,
-        status: i === 0 ? 'VALIDEE' : i === 1 ? 'ATTENTE' : 'EXPIREE'
-    }));
+    const onlineCount = myAnnonces.filter(a => a.status === 'ACTIF').length;
+    const pendingCount = myAnnonces.filter(a => a.status === 'ATTENTE').length;
+
+    const filteredAnnonces = activeFilter === 'Tous' 
+        ? myAnnonces 
+        : activeFilter === 'En ligne' 
+            ? myAnnonces.filter(a => a.status === 'ACTIF')
+            : myAnnonces.filter(a => a.status === 'ATTENTE');
 
     const handleAvatarClick = () => fileInputRef.current?.click();
     
@@ -163,20 +171,52 @@ export default function StudentDashboard() {
                                 <div className={styles.panelHeader}>
                                     <h2>Mon Inventaire Actif</h2>
                                     <div className={styles.panelFilters}>
-                                        <button className={styles.filterPillActive}>Tous</button>
-                                        <button className={styles.filterPill}>En ligne (1)</button>
-                                        <button className={styles.filterPill}>En attente (1)</button>
+                                        <button 
+                                            className={activeFilter === 'Tous' ? styles.filterPillActive : styles.filterPill}
+                                            onClick={() => setActiveFilter('Tous')}
+                                        >
+                                            Tous
+                                        </button>
+                                        <button 
+                                            className={activeFilter === 'En ligne' ? styles.filterPillActive : styles.filterPill}
+                                            onClick={() => setActiveFilter('En ligne')}
+                                        >
+                                            En ligne ({onlineCount})
+                                        </button>
+                                        <button 
+                                            className={activeFilter === 'En attente' ? styles.filterPillActive : styles.filterPill}
+                                            onClick={() => setActiveFilter('En attente')}
+                                        >
+                                            En revue ({pendingCount})
+                                        </button>
                                     </div>
                                 </div>
                                 <div className={styles.inventoryList}>
                                     {isLoading ? (
                                         <div className={styles.loading}>Chargement...</div>
-                                    ) : myListings.map(listing => {
-                                        const StatusIcon = STATUS_STYLES[listing.status].icon;
+                                    ) : filteredAnnonces.length === 0 ? (
+                                        <div className={styles.emptyInventory}>Aucune annonce dans cette catégorie.</div>
+                                    ) : filteredAnnonces.map(listing => {
+                                        const statusConfig = STATUS_STYLES[listing.status] || STATUS_STYLES['ATTENTE'];
+                                        const StatusIcon = statusConfig.icon;
+                                        
                                         return (
                                             <div key={listing.id} className={styles.inventoryCard}>
                                                 <div className={styles.invImageWrap}>
-                                                    <img src={listing.exemplaire?.photoUrl || listing.photoUrl} alt={listing.exemplaire?.ouvrage?.titre || 'Annonce sans titre'} />
+                                                    <img 
+                                                        src={
+                                                            (listing.exemplaire?.photoUrl || listing.photoUrl)?.startsWith('/uploads')
+                                                            ? `http://localhost:5000${listing.exemplaire?.photoUrl || listing.photoUrl}`
+                                                            : (listing.exemplaire?.photoUrl || listing.photoUrl) || `https://via.placeholder.com/150/f4f4f5/64748b?text=${listing.exemplaire?.ouvrage?.titre?.substring(0,2) || 'AD'}`
+                                                        } 
+                                                        alt={listing.exemplaire?.ouvrage?.titre || 'Annonce'} 
+                                                        onError={(e) => { 
+                                                            if (!e.target.dataset.triedFallback) {
+                                                                e.target.dataset.triedFallback = 'true';
+                                                                e.target.src = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=150&auto=format&fit=crop';
+                                                            }
+                                                        }}
+                                                    />
                                                 </div>
                                                 <div className={styles.invContent}>
                                                     <div className={styles.invMain}>
@@ -188,10 +228,10 @@ export default function StudentDashboard() {
                                                             </div>
                                                         </div>
                                                         <div className={styles.invMeta}>
-                                                            <span className={styles.invStatus} style={{ background: STATUS_STYLES[listing.status].bg, color: STATUS_STYLES[listing.status].color }}>
-                                                                <StatusIcon size={12} /> {STATUS_STYLES[listing.status].label}
+                                                            <span className={styles.invStatus} style={{ background: statusConfig.bg, color: statusConfig.color }}>
+                                                                <StatusIcon size={12} /> {statusConfig.label}
                                                             </span>
-                                                            <span className={styles.invViews}>• {listing.vues} vues</span>
+                                                            <span className={styles.invViews}>• {listing.nbVues || 0} vues</span>
                                                         </div>
                                                     </div>
                                                     <div className={styles.invActions}>

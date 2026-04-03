@@ -67,12 +67,21 @@ export default function PublishAd() {
     const handlePhotoUpload = (e) => {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
-        const newPhotos = files.map(f => URL.createObjectURL(f));
-        setFormData(prev => ({ ...prev, photos: [...prev.photos, ...newPhotos] }));
+        
+        // We store the real File objects for upload, and the blob URLs for preview
+        const newPhotoPreviews = files.map(f => ({
+            id: Math.random().toString(36).substr(2, 9),
+            file: f,
+            url: URL.createObjectURL(f)
+        }));
+        
+        setFormData(prev => ({ ...prev, photos: [...prev.photos, ...newPhotoPreviews] }));
         setErrorMsg('');
     };
 
     const removePhoto = (index) => {
+        // Revoke memory URL before removing
+        URL.revokeObjectURL(formData.photos[index].url);
         setFormData(prev => ({ ...prev, photos: prev.photos.filter((_, i) => i !== index) }));
     };
 
@@ -81,7 +90,29 @@ export default function PublishAd() {
         setIsPublishing(true);
         
         try {
-            await bookApi.create(formData);
+            // Prepare FormData for binary upload
+            const data = new FormData();
+            
+            // Basic fields
+            data.append('isbn', formData.isbn);
+            data.append('titre', formData.titre);
+            data.append('auteur', formData.auteur);
+            data.append('filiere', formData.filiere);
+            data.append('niveau', formData.niveau);
+            data.append('etat', formData.etat);
+            data.append('ville', formData.ville);
+            data.append('typeEchange', formData.typeEchange);
+            data.append('prixVente', formData.prixVente || 0);
+            data.append('dureePret', formData.dureePret || '');
+            data.append('caution', formData.caution || 0);
+            data.append('description', formData.description || '');
+            
+            // Multple photos
+            formData.photos.forEach(p => {
+                data.append('photos', p.file);
+            });
+
+            await bookApi.create(data);
             
             setIsPublishing(false);
             toast.success("Annonce en cours de traitement, merci de patienter s'il vous plaît.");
@@ -89,7 +120,7 @@ export default function PublishAd() {
             
             // Redirect automatically after showing confetti for a few seconds
             setTimeout(() => {
-                navigate('/student-dashboard/dashboard');
+                navigate('/student-dashboard');
             }, 3500);
         } catch (error) {
             console.error('Publish error:', error);
@@ -309,9 +340,9 @@ export default function PublishAd() {
                                         {formData.photos.length > 0 && (
                                             <div className={styles.photoPreviewList}>
                                                 <AnimatePresence>
-                                                    {formData.photos.map((url, i) => (
-                                                        <motion.div key={i} className={styles.photoThumb} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }}>
-                                                            <img src={url} alt={`Preview ${i}`} />
+                                                    {formData.photos.map((p, i) => (
+                                                        <motion.div key={p.id} className={styles.photoThumb} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }}>
+                                                            <img src={p.url} alt={`Preview ${i}`} />
                                                             <button className={styles.removePhoto} onClick={() => removePhoto(i)}><X size={14} /></button>
                                                         </motion.div>
                                                     ))}
@@ -394,7 +425,7 @@ export default function PublishAd() {
                                                     id: 0,
                                                     titreAnnonce: formData.titre || 'Titre du manuel',
                                                     auteur: formData.auteur || 'Nom de l\'auteur',
-                                                    photoUrl: formData.photos[0] || 'https://via.placeholder.com/300x450?text=Pas+de+photo',
+                                                    photoUrl: formData.photos[0] ? formData.photos[0].url : 'https://via.placeholder.com/300x450?text=Pas+de+photo',
                                                     prixVente: formData.prixVente || 0,
                                                     typeEchange: formData.typeEchange,
                                                     etat: formData.etat,

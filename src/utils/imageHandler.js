@@ -8,7 +8,7 @@ const BASE_PATH = '/admin'; // Matches vite.config.js base path
 
 export const getFullImageUrl = (url) => {
     if (!url) return DEFAULT_BOOK_IMAGE;
-    if (url.startsWith('http')) return url;
+    if (url.startsWith('http') || url.startsWith('blob:')) return url;
     
     // Si l'URL contient '/admin/books/', c'est une image mockée (legacy)
     if (url.includes('/admin/books/')) {

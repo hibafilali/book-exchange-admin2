@@ -32,13 +32,36 @@ class AnnonceController {
         }
     }
 
+    async getMy(req, res) {
+        try {
+            const userId = req.user.id;
+            const annonces = await annonceService.getAnnoncesByUserId(userId);
+            res.json(annonces);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
     async create(req, res) {
         try {
-            const result = await annonceService.createAnnonce(req.body);
+            const userId = req.user.id;
+            
+            // Collect file names if any were uploaded
+            let photoUrls = [];
+            if (req.files && req.files.length > 0) {
+                photoUrls = req.files.map(f => `/uploads/${f.filename}`);
+            }
+
+            const data = {
+                ...req.body,
+                photoUrls
+            };
+
+            const result = await annonceService.createAnnonce(data, userId);
             res.status(201).json(result);
         } catch (error) {
             console.error('Create error:', error);
-            res.status(500).json({ error: 'Failed to create the ad. Check DB logs.' });
+            res.status(500).json({ error: error.message });
         }
     }
 }
