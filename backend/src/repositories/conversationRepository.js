@@ -5,7 +5,8 @@ class ConversationRepository {
         const query = `
             SELECT c.*, 
                    u1.nom as user1_nom, u1.prenom as user1_prenom, u1.avatarUrl as user1_avatar,
-                   u2.nom as user2_nom, u2.prenom as user2_prenom, u2.avatarUrl as user2_avatar
+                   u2.nom as user2_nom, u2.prenom as user2_prenom, u2.avatarUrl as user2_avatar,
+                   (SELECT message_text FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message
             FROM conversations c
             JOIN users u1 ON c.user1_id = u1.id
             JOIN users u2 ON c.user2_id = u2.id

@@ -64,8 +64,12 @@ export default function ChatWindow() {
                 setIsLoadingMsgs(true);
                 const response = await conversationApi.getMessages(selectedConversation.id);
                 setMessages(response.data);
+                
+                // Also refresh conversations to update last message snippets
+                const convRes = await conversationApi.getConversations();
+                setConversations(convRes.data);
             } catch (error) {
-                console.error('Failed to fetch messages:', error);
+                console.error('Failed to load messages:', error);
             } finally {
                 setIsLoadingMsgs(false);
             }
@@ -182,7 +186,7 @@ export default function ChatWindow() {
                                         <span>{c.last_message_at ? new Date(c.last_message_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span>
                                     </div>
                                     <div className={styles.contactBottom}>
-                                        <p>Cliquer pour voir la discussion</p>
+                                        <p>{c.last_message || 'Cliquer pour voir la discussion'}</p>
                                     </div>
                                 </div>
                             </div>

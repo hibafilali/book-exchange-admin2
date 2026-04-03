@@ -90,11 +90,11 @@ export default function BookDetails() {
     const slugify = (text) => text.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
     const handleSendContact = async () => {
-        if (!contactMsg.trim() || !book.exemplaire?.proprietaire_id) return;
+        if (!contactMsg.trim() || !book.exemplaire?.proprietaire?.id) return;
         
         try {
             // 1. Start or get conversation
-            const convRes = await conversationApi.startConversation(book.exemplaire.proprietaire_id);
+            const convRes = await conversationApi.startConversation(book.exemplaire.proprietaire.id);
             const convId = convRes.data.conversationId;
 
             // 2. Send initial message
