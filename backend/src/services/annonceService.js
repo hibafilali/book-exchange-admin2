@@ -5,6 +5,10 @@ class AnnonceService {
         return await annonceRepository.findAll(status);
     }
 
+    async getAllCatalog() {
+        return await annonceRepository.findAllCatalog();
+    }
+
     async getAnnonceById(id) {
         const annonce = await annonceRepository.findById(id);
         if (!annonce) throw new Error('Annonce not found');

@@ -11,6 +11,15 @@ class AnnonceController {
         }
     }
 
+    async getCatalog(req, res) {
+        try {
+            const annonces = await annonceService.getAllCatalog();
+            res.json(annonces);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
     async getById(req, res) {
         try {
             const annonce = await annonceService.getAnnonceById(req.params.id);

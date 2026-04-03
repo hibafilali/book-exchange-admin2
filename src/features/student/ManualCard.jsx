@@ -22,15 +22,15 @@ const ETAT_CONFIG = {
 
 export default function ManualCard({ annonce, onCardClick, index = 0 }) {
     const { isFavorited, toggleFavorite } = useFavorites();
-    const isFav = isFavorited(annonce.id);
-    const typeConf = TYPE_CONFIG[annonce.typeEchange] || TYPE_CONFIG.VENTE;
-    const etatConf = ETAT_CONFIG[annonce.exemplaire?.etat] || ETAT_CONFIG.BON;
-    const isPopular = annonce.nbVues >= 150;
+    const isFav = annonce.id ? isFavorited(annonce.id) : false;
+    const typeConf = (annonce.id && TYPE_CONFIG[annonce.typeEchange]) || { label: 'Catalogue', gradient: 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)', shadow: '0 4px 12px rgba(100,116,139,0.2)', color: '#64748b' };
+    const etatConf = ETAT_CONFIG[annonce.exemplaire?.etat] || { label: 'Inconnu', bg: '#94a3b8' };
+    const isPopular = (annonce.nbVues || 0) >= 150;
     const nbEchanges = annonce.exemplaire?.proprietaire?.nbEchanges || 0;
     const isTrusted = nbEchanges >= 3;
 
-    const priceLabel = annonce.typeEchange === 'VENTE'
-        ? `${annonce.prixVente} DH`
+    const priceLabel = !annonce.id ? 'Bibliothèque' 
+        : annonce.typeEchange === 'VENTE' ? `${annonce.prixVente} DH`
         : annonce.typeEchange === 'DON' ? 'Gratuit' : 'Prêt';
 
     return (

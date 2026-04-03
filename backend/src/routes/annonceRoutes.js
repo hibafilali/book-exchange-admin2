@@ -6,6 +6,7 @@ import upload from '../middlewares/upload.js';
 const router = express.Router();
 
 router.get('/', annonceController.getAll);
+router.get('/catalog', annonceController.getCatalog);
 router.get('/my', authMiddleware, annonceController.getMy);
 router.get('/:id', annonceController.getById);
 router.post('/', authMiddleware, upload.array('photos', 5), annonceController.create);

@@ -11,6 +11,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import ManualCard from './ManualCard';
 import { bookApi } from '../../api/client';
+import { getFullImageUrl } from '../../utils/imageHandler';
 import { ETAT_LABELS, ETAT_COLORS, TYPE_LABELS, TYPE_COLORS } from '../../data/mockBooks';
 import styles from './SearchExplorer.module.css';
 
@@ -54,13 +55,14 @@ function SkeletonCard() {
 // LIST VIEW ITEM
 // ============================
 function ListItem({ annonce, onClick }) {
-    const priceLabel = annonce.typeEchange === 'VENTE' ? `${annonce.prixVente} DH`
+    const priceLabel = !annonce.id ? 'Bibliothèque'
+        : annonce.typeEchange === 'VENTE' ? `${annonce.prixVente} DH`
         : annonce.typeEchange === 'DON' ? 'Gratuit' : 'Prêt';
     return (
         <motion.div className={styles.listItem} onClick={onClick}
             initial={{ opacity: 0, x: -15 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }} whileHover={{ x: 4 }}>
-            <img src={annonce.exemplaire?.photoUrl || annonce.photoUrl} alt={annonce.exemplaire?.ouvrage?.titre} className={styles.listImg} />
+            <img src={getFullImageUrl(annonce.exemplaire?.photoUrl || annonce.photoUrl)} alt={annonce.exemplaire?.ouvrage?.titre} className={styles.listImg} />
             <div className={styles.listInfo}>
                 <h3>{annonce.exemplaire?.ouvrage?.titre}</h3>
                 <p className={styles.listAuthor}>{annonce.exemplaire?.ouvrage?.auteur}</p>
@@ -118,7 +120,7 @@ function MapView({ results }) {
                         <Marker key={b.id} position={[lat, lng]}>
                             <Popup className={styles.customPopup}>
                                 <div className={styles.popupInner}>
-                                    <img src={b.exemplaire?.photoUrl || b.photoUrl} alt="" className={styles.popupImg} />
+                                    <img src={getFullImageUrl(b.exemplaire?.photoUrl || b.photoUrl)} alt="" className={styles.popupImg} />
                                     <div className={styles.popupDetails}>
                                         <strong>{b.exemplaire?.ouvrage?.titre}</strong>
                                         <p>{b.typeEchange === 'VENTE' ? `${b.prixVente} DH` : TYPE_LABELS[b.typeEchange]}</p>
@@ -158,6 +160,7 @@ export default function SearchExplorer() {
     const [selectedType, setSelectedType] = useState(null); // segment button: single selection
     const [selectedFilieres, setSelectedFilieres] = useState([]);
     const [filiereSearch, setFiliereSearch] = useState('');
+    const [isbnDetected, setIsbnDetected] = useState(null);
 
     const FILIERES = useMemo(() => [...new Set(allBooks.map(b => b.exemplaire?.ouvrage?.categorie?.label || b.filiere).filter(Boolean))].sort(), [allBooks]);
     const ISBN_MAP = useMemo(() => {
@@ -175,7 +178,7 @@ export default function SearchExplorer() {
         const fetchBooks = async () => {
             try {
                 setIsLoading(true);
-                const response = await bookApi.getAll();
+                const response = await bookApi.getCatalog();
                 setAllBooks(response.data);
             } catch (error) {
                 console.error('Failed to fetch books:', error);

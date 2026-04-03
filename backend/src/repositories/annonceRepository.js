@@ -1,6 +1,26 @@
 import pool from '../config/db.js';
 
 class AnnonceRepository {
+    async findAllCatalog() {
+        // Fetch ALL ouvrages, even those without active ads
+        const query = `
+            SELECT 
+                o.id as ouvrage_id, o.titre, o.auteur, o.isbn,
+                a.id as annonce_id, a.typeEchange, a.prixVente, a.nbVues, a.description, a.status, a.datePublication,
+                e.id as exemplaire_id, e.etat, e.photoUrl,
+                c.id as categorie_id, c.label as categorie_label,
+                u.id as proprietaire_id, u.nom, u.filiere, u.etablissement, u.ville, u.nbEchanges, u.avatarUrl
+            FROM ouvrages o
+            LEFT JOIN exemplaires e ON o.id = e.ouvrage_id
+            LEFT JOIN annonces a ON e.id = a.exemplaire_id
+            LEFT JOIN categories c ON o.categorie_id = c.id
+            LEFT JOIN users u ON e.proprietaire_id = u.id
+            ORDER BY a.datePublication DESC, o.titre ASC
+        `;
+        const [rows] = await pool.query(query);
+        return this._formatNested(rows);
+    }
+
     async findAll(status = null) {
         // Here we JOIN annonces with exemplaires, ouvrages, categories, and users
         let query = `
