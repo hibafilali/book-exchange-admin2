@@ -112,6 +112,11 @@ export default function PublishAd() {
                 data.append('photos', p.file);
             });
 
+            console.log('--- FORM DATA PREPARED FOR UPLOAD ---');
+            for (let [key, value] of data.entries()) {
+                console.log(`--- ${key}:`, value, '---');
+            }
+
             await bookApi.create(data);
             
             setIsPublishing(false);
@@ -124,7 +129,8 @@ export default function PublishAd() {
             }, 3500);
         } catch (error) {
             console.error('Publish error:', error);
-            toast.error("Erreur lors de la publication. Veuillez réessayer.");
+            const errMsg = error.response?.data?.message || error.response?.data?.error || "Erreur lors de la publication. Veuillez réessayer.";
+            toast.error(errMsg);
             setIsPublishing(false);
         }
     };
@@ -423,15 +429,23 @@ export default function PublishAd() {
                                             <ManualCard 
                                                 annonce={{
                                                     id: 0,
-                                                    titreAnnonce: formData.titre || 'Titre du manuel',
-                                                    auteur: formData.auteur || 'Nom de l\'auteur',
-                                                    photoUrl: formData.photos[0] ? formData.photos[0].url : 'https://via.placeholder.com/300x450?text=Pas+de+photo',
-                                                    prixVente: formData.prixVente || 0,
                                                     typeEchange: formData.typeEchange,
-                                                    etat: formData.etat,
-                                                    ville: formData.ville || 'Ville non spécifiée',
+                                                    prixVente: formData.prixVente,
                                                     nbVues: 0,
-                                                    nbOperations: 0
+                                                    description: formData.description,
+                                                    exemplaire: {
+                                                        etat: formData.etat,
+                                                        photoUrl: formData.photos[0] ? formData.photos[0].url : 'https://via.placeholder.com/300x450?text=Pas+de+photo',
+                                                        ouvrage: {
+                                                            titre: formData.titre || 'Titre du manuel',
+                                                            auteur: formData.auteur || 'Nom de l\'auteur'
+                                                        },
+                                                        proprietaire: {
+                                                            nom: 'Vous',
+                                                            ville: formData.ville || 'Non spécifié',
+                                                            nbEchanges: 0
+                                                        }
+                                                    }
                                                 }}
                                             />
                                         </div>

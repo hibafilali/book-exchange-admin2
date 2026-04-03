@@ -7,19 +7,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Ensure upload directory exists
-const uploadDir = path.join(__dirname, '../../../uploads');
+const uploadDir = path.resolve(__dirname, '../../uploads'); 
+console.log('--- STORAGE FOLDER (ABSOLUTE):', uploadDir, '---');
 if (!fs.existsSync(uploadDir)) {
+    console.log('--- CREATING UPLOADS FOLDER ---');
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 // Set up storage
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
+        console.log('--- MULTIER DESTINATION FOR:', file.originalname, '---');
         cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, 'book-' + uniqueSuffix + path.extname(file.originalname));
+        const name = 'book-' + uniqueSuffix + path.extname(file.originalname);
+        console.log('--- SAVING AS:', name, '---');
+        cb(null, name);
     }
 });
 
