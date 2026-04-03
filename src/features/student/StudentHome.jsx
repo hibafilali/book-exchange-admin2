@@ -47,7 +47,7 @@ export default function StudentHome() {
         const fetchRecent = async () => {
             try {
                 setIsLoading(true);
-                const response = await bookApi.getAll();
+                const response = await bookApi.getAll({ status: 'ACTIF' });
                 // Store all, we'll slice for different sections
                 setAnnonces(response.data);
             } catch (error) {

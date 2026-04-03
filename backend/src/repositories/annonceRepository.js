@@ -1,9 +1,9 @@
 import pool from '../config/db.js';
 
 class AnnonceRepository {
-    async findAll() {
+    async findAll(status = null) {
         // Here we JOIN annonces with exemplaires, ouvrages, categories, and users
-        const query = `
+        let query = `
             SELECT 
                 a.id as annonce_id, a.typeEchange, a.prixVente, a.nbVues, a.description, a.status, a.datePublication,
                 e.id as exemplaire_id, e.etat, e.photoUrl,
@@ -16,7 +16,14 @@ class AnnonceRepository {
             LEFT JOIN categories c ON o.categorie_id = c.id
             INNER JOIN users u ON e.proprietaire_id = u.id
         `;
-        const [rows] = await pool.query(query);
+        
+        const params = [];
+        if (status) {
+            query += ' WHERE a.status = ?';
+            params.push(status);
+        }
+
+        const [rows] = await pool.query(query, params);
         return this._formatNested(rows);
     }
 

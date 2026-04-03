@@ -1,8 +1,8 @@
 import annonceRepository from '../repositories/annonceRepository.js';
 
 class AnnonceService {
-    async getAllAnnonces() {
-        return await annonceRepository.findAll();
+    async getAllAnnonces(status = null) {
+        return await annonceRepository.findAll(status);
     }
 
     async getAnnonceById(id) {

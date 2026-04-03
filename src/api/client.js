@@ -16,7 +16,7 @@ api.interceptors.request.use(config => {
 });
 
 export const bookApi = {
-    getAll: () => api.get('/annonces'),
+    getAll: (params) => api.get('/annonces', { params }),
     getMy: () => api.get('/annonces/my'),
     getById: (id) => api.get(`/annonces/${id}`),
     create: (data) => {

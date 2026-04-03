@@ -3,7 +3,8 @@ import annonceService from '../services/annonceService.js';
 class AnnonceController {
     async getAll(req, res) {
         try {
-            const annonces = await annonceService.getAllAnnonces();
+            const { status } = req.query;
+            const annonces = await annonceService.getAllAnnonces(status);
             res.json(annonces);
         } catch (error) {
             res.status(500).json({ error: error.message });
