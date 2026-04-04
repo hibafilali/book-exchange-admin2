@@ -13,6 +13,8 @@ import { useAuth } from '../auth/useAuth';
 import { getFullImageUrl } from '../../utils/imageHandler';
 import ManualCard from './ManualCard';
 import styles from './BookDetails.module.css';
+import ShareMenu from './ShareMenu';
+
 
 const TYPE_CONFIG = {
     VENTE: { label: 'Vente', gradient: 'var(--gradient-vente)', color: TYPE_COLORS.VENTE },
@@ -210,8 +212,8 @@ export default function BookDetails() {
                                     }} whileTap={{ scale: 0.85 }}>
                                     <Heart size={18} fill={isFav ? '#ef4444' : 'none'} />
                                 </motion.button>
-                                <button className={styles.iconAction}><Share2 size={18} /></button>
-                            </div>
+                                    <ShareMenu title={book.exemplaire?.ouvrage?.titre} />
+                                </div>
                         </div>
                     </motion.div>
 

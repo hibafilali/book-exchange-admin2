@@ -81,7 +81,7 @@ export const exemplaireApi = {
     getMyLibrary: () => api.get('/exemplaires/my'),
     getAvailable: () => api.get('/exemplaires/available'),
     add: (data) => api.post('/exemplaires', data),
-    update: (id, data) => api.put(`/exemplaires/${id}`, data),
+    update: (id, data) => api.patch(`/exemplaires/${id}`, data),
     delete: (id) => api.delete(`/exemplaires/${id}`)
 };
 

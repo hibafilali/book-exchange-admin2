@@ -11,7 +11,7 @@ router.use(authMiddleware);
 router.get('/my', exemplaireController.getMyLibrary);
 router.get('/available', exemplaireController.getAvailableForAd);
 router.post('/', exemplaireController.add);
-router.put('/:id', upload.single('photo'), exemplaireController.update);
+router.patch('/:id', upload.single('photo'), exemplaireController.update);
 router.delete('/:id', exemplaireController.delete);
 
 export default router;

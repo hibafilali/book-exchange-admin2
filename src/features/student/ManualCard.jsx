@@ -6,6 +6,7 @@ import { useFavorites } from '../../context/FavoritesContext';
 import { TYPE_LABELS, TYPE_COLORS, ETAT_LABELS, ETAT_COLORS } from '../../data/mockBooks';
 import styles from './ManualCard.module.css';
 import { getFullImageUrl } from '../../utils/imageHandler';
+import ShareMenu from './ShareMenu';
 
 const TYPE_CONFIG = {
     VENTE: { label: TYPE_LABELS.VENTE, gradient: 'var(--gradient-vente)', shadow: 'var(--shadow-vente)', color: TYPE_COLORS.VENTE },
@@ -84,6 +85,14 @@ export default function ManualCard({ annonce, onCardClick, index = 0 }) {
                 >
                     <Heart size={16} fill={isFav ? '#ef4444' : 'none'} />
                 </motion.button>
+
+                {/* Share */}
+                <div className={styles.shareBtn} onClick={(e) => e.stopPropagation()}>
+                    <ShareMenu 
+                        title={annonce.exemplaire?.ouvrage?.titre} 
+                        url={`/student-dashboard/book/${annonce.id}`} 
+                    />
+                </div>
             </div>
 
             {/* Body */}
