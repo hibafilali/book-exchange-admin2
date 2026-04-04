@@ -80,6 +80,7 @@ class AnnonceController {
             console.log('--- REQ.BODY:', req.body, '---');
 
             const data = {
+                exemplaireId: req.body.exemplaireId ? parseInt(req.body.exemplaireId) : null,
                 titre: req.body.titre || 'Titre inconnu',
                 auteur: req.body.auteur || 'Auteur inconnu',
                 isbn: req.body.isbn || null,

@@ -45,6 +45,12 @@ class TransactionService {
             throw new Error('Transaction non trouvée ou non autorisée');
         }
 
+        // --- IDEMPOTENCY: Already accepted? ---
+        if (transaction.status !== 'PENDING') {
+            console.log(`[TransactionService] Already accepted or processed: #${id} (Status: ${transaction.status})`);
+            return true; 
+        }
+
         await transactionRepository.updateStatus(id, 'ACCEPTED');
 
         // Notify Buyer
@@ -85,6 +91,8 @@ class TransactionService {
             throw new Error('Transaction non trouvée ou non autorisée');
         }
 
+        if (transaction.status === 'COMPLETED') return true;
+
         // 1. Mark transaction as COMPLETED
         await transactionRepository.updateStatus(id, 'COMPLETED');
 
@@ -110,6 +118,8 @@ class TransactionService {
         if (!transaction || (transaction.seller_id !== userId && transaction.buyer_id !== userId)) {
             throw new Error('Transaction non trouvée ou non autorisée');
         }
+
+        if (transaction.status === 'CANCELLED') return true;
 
         await transactionRepository.updateStatus(id, 'CANCELLED');
 

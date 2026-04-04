@@ -4,12 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     TrendingUp, Leaf, BookHeart, Plus, Edit2, Trash2, CheckCircle,
     Clock, XCircle, Bell, MessageSquare, ExternalLink, ShieldCheck, Send, Sparkles,
-    Calendar, MapPin, Camera, Save, X
+    Calendar, MapPin, Camera, Save, X, Loader2
 } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { useFavorites } from '../../context/FavoritesContext';
 import { bookApi, dashboardApi, transactionApi } from '../../api/client';
 import ManualCard from './ManualCard';
+import { getFullImageUrl } from '../../utils/imageHandler';
 import styles from './StudentDashboard.module.css';
 
 // Status badge mapping - matching DB ENUMs: 'ACTIF', 'ATTENTE', 'EXPIREE'
@@ -26,6 +27,7 @@ export default function StudentDashboard() {
     const { user, updateAvatar, updateName } = useAuth();
     const { favoritedIds } = useFavorites();
     const navigate = useNavigate();
+    const isProcessingRef = useRef(new Set());
     
     const [allBooks, setAllBooks] = useState([]);
     const [dashboardFeatures, setDashboardFeatures] = useState({ stats: null, actions: [], appointments: [], wishes: [] });
@@ -35,6 +37,7 @@ export default function StudentDashboard() {
     const [myPurchases, setMyPurchases] = useState([]);
     const [mySales, setMySales] = useState([]);
     const [activeFilter, setActiveFilter] = useState('Tous');
+    const [processingIds, setProcessingIds] = useState([]);
     
     // Profile Logic
     const [isEditing, setIsEditing] = useState(false);
@@ -96,36 +99,55 @@ export default function StudentDashboard() {
     };
 
     const handleAcceptTransaction = async (id) => {
+        if (isProcessingRef.current.has(id)) return;
+        isProcessingRef.current.add(id);
+        setProcessingIds(prev => [...prev, id]);
+
         try {
             await transactionApi.accept(id);
             toast.success('Transaction acceptée !');
-            // Global Refresh
             await fetchDashboardData();
         } catch (error) {
             toast.error('Erreur lors de l\'acceptation');
+        } finally {
+            isProcessingRef.current.delete(id);
+            setProcessingIds(prev => prev.filter(pid => pid !== id));
         }
     };
 
     const handleCancelTransaction = async (id) => {
+        if (isProcessingRef.current.has(id)) return;
         if (!window.confirm('Voulez-vous vraiment annuler cette transaction ?')) return;
+        
+        isProcessingRef.current.add(id);
+        setProcessingIds(prev => [...prev, id]);
+
         try {
             await transactionApi.cancel(id);
             toast.success('Transaction annulée');
-            // Global Refresh
             await fetchDashboardData();
         } catch (error) {
             toast.error('Erreur lors de l\'annulation');
+        } finally {
+            isProcessingRef.current.delete(id);
+            setProcessingIds(prev => prev.filter(pid => pid !== id));
         }
     };
 
     const handleCompleteTransaction = async (id) => {
+        if (isProcessingRef.current.has(id)) return;
+        isProcessingRef.current.add(id);
+        setProcessingIds(prev => [...prev, id]);
+
         try {
             await transactionApi.complete(id);
             toast.success('Transaction marquée comme terminée !');
-            // Global Refresh
             await fetchDashboardData();
         } catch (error) {
             toast.error('Erreur lors de la validation');
+        } finally {
+            isProcessingRef.current.delete(id);
+            setProcessingIds(prev => prev.filter(pid => pid !== id));
         }
     };
 
@@ -255,11 +277,7 @@ export default function StudentDashboard() {
                                             <div key={listing.id} className={styles.inventoryCard}>
                                                 <div className={styles.invImageWrap}>
                                                     <img 
-                                                        src={
-                                                            (listing.exemplaire?.photoUrl || listing.photoUrl)?.startsWith('/uploads')
-                                                            ? `http://localhost:5000${listing.exemplaire?.photoUrl || listing.photoUrl}`
-                                                            : (listing.exemplaire?.photoUrl || listing.photoUrl) || `https://via.placeholder.com/150/f4f4f5/64748b?text=${listing.exemplaire?.ouvrage?.titre?.substring(0,2) || 'AD'}`
-                                                        } 
+                                                        src={getFullImageUrl(listing.exemplaire?.photoUrl || listing.photoUrl)} 
                                                         alt={listing.exemplaire?.ouvrage?.titre || 'Annonce'} 
                                                         onError={(e) => { 
                                                             if (!e.target.dataset.triedFallback) {
@@ -345,7 +363,7 @@ export default function StudentDashboard() {
                                             ) : myPurchases.map(t => (
                                                 <div key={t.id} className={styles.transactionCard}>
                                                     <div className={styles.tImage}>
-                                                        <img src={t.photoUrl?.startsWith('/uploads') ? `http://localhost:5000${t.photoUrl}` : t.photoUrl} alt="" />
+                                                        <img src={getFullImageUrl(t.photoUrl)} alt="" />
                                                     </div>
                                                     <div className={styles.tInfo}>
                                                         <h4>{t.ouvrage_titre}</h4>
@@ -364,10 +382,22 @@ export default function StudentDashboard() {
                                                     </div>
                                                     <div className={styles.tActions}>
                                                         {t.status === 'ACCEPTED' || t.status === 'MEETING_SCHEDULED' ? (
-                                                            <button onClick={() => handleCompleteTransaction(t.id)} className={styles.btnTSuccess}>Terminer</button>
+                                                            <button 
+                                                                onClick={() => handleCompleteTransaction(t.id)} 
+                                                                className={styles.btnTSuccess}
+                                                                disabled={processingIds.includes(t.id)}
+                                                            >
+                                                                {processingIds.includes(t.id) ? <Loader2 size={12} className="animate-spin" /> : 'Terminer'}
+                                                            </button>
                                                         ) : null}
                                                         {t.status !== 'COMPLETED' && t.status !== 'CANCELLED' && (
-                                                            <button onClick={() => handleCancelTransaction(t.id)} className={styles.btnTCancel}>Annuler</button>
+                                                            <button 
+                                                                onClick={() => handleCancelTransaction(t.id)} 
+                                                                className={styles.btnTCancel}
+                                                                disabled={processingIds.includes(t.id)}
+                                                            >
+                                                                {processingIds.includes(t.id) ? '⌛' : 'Annuler'}
+                                                            </button>
                                                         )}
                                                     </div>
                                                 </div>
@@ -383,7 +413,7 @@ export default function StudentDashboard() {
                                             ) : mySales.map(t => (
                                                 <div key={t.id} className={styles.transactionCard}>
                                                     <div className={styles.tImage}>
-                                                        <img src={t.photoUrl?.startsWith('/uploads') ? `http://localhost:5000${t.photoUrl}` : t.photoUrl} alt="" />
+                                                        <img src={getFullImageUrl(t.photoUrl)} alt="" />
                                                     </div>
                                                     <div className={styles.tInfo}>
                                                         <h4>{t.ouvrage_titre}</h4>
@@ -397,13 +427,31 @@ export default function StudentDashboard() {
                                                     </div>
                                                     <div className={styles.tActions}>
                                                         {t.status === 'PENDING' && (
-                                                            <button onClick={() => handleAcceptTransaction(t.id)} className={styles.btnTPrimary}>Accepter</button>
+                                                            <button 
+                                                                onClick={() => handleAcceptTransaction(t.id)} 
+                                                                className={styles.btnTPrimary}
+                                                                disabled={processingIds.includes(t.id)}
+                                                            >
+                                                                {processingIds.includes(t.id) ? <Loader2 size={12} className="animate-spin" /> : 'Accepter'}
+                                                            </button>
                                                         ) }
                                                         {(t.status === 'ACCEPTED' || t.status === 'MEETING_SCHEDULED') && (
-                                                            <button onClick={() => handleCompleteTransaction(t.id)} className={styles.btnTSuccess}>Valider</button>
+                                                            <button 
+                                                                onClick={() => handleCompleteTransaction(t.id)} 
+                                                                className={styles.btnTSuccess}
+                                                                disabled={processingIds.includes(t.id)}
+                                                            >
+                                                                {processingIds.includes(t.id) ? <Loader2 size={12} className="animate-spin" /> : 'Valider'}
+                                                            </button>
                                                         )}
                                                         {t.status !== 'COMPLETED' && t.status !== 'CANCELLED' && (
-                                                            <button onClick={() => handleCancelTransaction(t.id)} className={styles.btnTCancel}>Annuler</button>
+                                                            <button 
+                                                                onClick={() => handleCancelTransaction(t.id)} 
+                                                                className={styles.btnTCancel}
+                                                                disabled={processingIds.includes(t.id)}
+                                                            >
+                                                                {processingIds.includes(t.id) ? '⌛' : 'Annuler'}
+                                                            </button>
                                                         )}
                                                     </div>
                                                 </div>
@@ -438,17 +486,26 @@ export default function StudentDashboard() {
                                             <div className={styles.actionBtns}>
                                                 {act.type === 'COD_REQUEST' ? (
                                                     <>
-                                                        <button className={styles.btnAccept} onClick={() => handleAcceptTransaction(act.transactionId)}>
-                                                            <CheckCircle size={14} /> Accepter
+                                                        <button 
+                                                            className={styles.btnAccept} 
+                                                            onClick={() => handleAcceptTransaction(act.transactionId)}
+                                                            disabled={processingIds.includes(act.transactionId)}
+                                                        >
+                                                            {processingIds.includes(act.transactionId) ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />} 
+                                                            {processingIds.includes(act.transactionId) ? 'Chargement...' : 'Accepter'}
                                                         </button>
-                                                        <button className={styles.btnRefuse} onClick={() => handleCancelTransaction(act.transactionId)}>
+                                                        <button 
+                                                            className={styles.btnRefuse} 
+                                                            onClick={() => handleCancelTransaction(act.transactionId)}
+                                                            disabled={processingIds.includes(act.transactionId)}
+                                                        >
                                                             <XCircle size={14} /> Refuser
                                                         </button>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <button className={styles.btnAccept}><CheckCircle size={14} /> Confirmer</button>
-                                                        <button className={styles.btnRefuse}><XCircle size={14} /> Plus tard</button>
+                                                        <button className={styles.btnAccept} disabled={isLoading}><CheckCircle size={14} /> Confirmer</button>
+                                                        <button className={styles.btnRefuse} disabled={isLoading}><XCircle size={14} /> Plus tard</button>
                                                     </>
                                                 )}
                                             </div>
