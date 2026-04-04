@@ -1,5 +1,5 @@
 import express from 'express';
-import { getConversations, getMessages, sendMessage, createOrGetConversation } from '../controllers/conversationController.js';
+import { getConversations, getMessages, sendMessage, createOrGetConversation, updateMessageStatus } from '../controllers/conversationController.js';
 import authMiddleware from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
@@ -10,6 +10,7 @@ router.use(authMiddleware);
 router.get('/', getConversations);
 router.get('/:id/messages', getMessages);
 router.post('/:id/messages', sendMessage);
+router.patch('/messages/:messageId', updateMessageStatus);
 router.post('/start', createOrGetConversation);
 
 export default router;

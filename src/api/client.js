@@ -63,7 +63,8 @@ export const conversationApi = {
     getConversations: () => api.get('/conversations'),
     getMessages: (id) => api.get(`/conversations/${id}/messages`),
     sendMessage: (id, data) => api.post(`/conversations/${id}/messages`, data),
-    startConversation: (recepteurId) => api.post('/conversations/start', { recepteurId })
+    updateMessage: (messageId, data) => api.patch(`/conversations/messages/${messageId}`, data),
+    startConversation: (recepteurId, annonceId) => api.post('/conversations/start', { recepteurId, annonceId })
 };
 
 export const transactionApi = {
@@ -84,6 +85,17 @@ export const exemplaireApi = {
     add: (data) => api.post('/exemplaires', data),
     update: (id, data) => api.patch(`/exemplaires/${id}`, data),
     delete: (id) => api.delete(`/exemplaires/${id}`)
+};
+
+export const platformReviewApi = {
+    submit: (data) => api.post('/platform-reviews', data),
+    getAdminReviews: () => api.get('/platform-reviews/admin')
+};
+
+export const favorisApi = {
+    get: () => api.get('/favoris'),
+    add: (annonceId) => api.post('/favoris', { annonceId }),
+    remove: (annonceId) => api.delete(`/favoris/${annonceId}`)
 };
 
 export default api;

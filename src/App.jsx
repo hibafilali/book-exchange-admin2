@@ -10,6 +10,7 @@ import ForgotPassword from './features/auth/ForgotPassword';
 import UsersList from './features/users/UsersList';
 import AnnoncesList from './features/annonces/AnnoncesList';
 import Moderation from './features/moderation/Moderation';
+import PlatformPerformance from './features/admin/PlatformPerformance';
 import Settings from './features/settings/Settings';
 import AdminTransactions from './features/transactions/AdminTransactions';
 import StudentLayout from './features/student/StudentLayout';
@@ -142,6 +143,7 @@ function App() {
             <Route path="annonces" element={<AnnoncesList />} />
             <Route path="transactions" element={<AdminTransactions />} />
             <Route path="moderation" element={<Moderation />} />
+            <Route path="performance" element={<PlatformPerformance />} />
             <Route path="settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Route>

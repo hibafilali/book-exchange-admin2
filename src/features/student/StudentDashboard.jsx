@@ -11,7 +11,9 @@ import { useFavorites } from '../../context/FavoritesContext';
 import { bookApi, dashboardApi, transactionApi } from '../../api/client';
 import ManualCard from './ManualCard';
 import { getFullImageUrl } from '../../utils/imageHandler';
+import PlatformRatingModal from './PlatformRatingModal';
 import styles from './StudentDashboard.module.css';
+import { toast } from 'react-hot-toast';
 
 // Status badge mapping - matching DB ENUMs: 'ACTIF', 'ATTENTE', 'EXPIREE'
 const STATUS_STYLES = {
@@ -38,35 +40,41 @@ export default function StudentDashboard() {
     const [mySales, setMySales] = useState([]);
     const [activeFilter, setActiveFilter] = useState('Tous');
     const [processingIds, setProcessingIds] = useState([]);
+    const [activeTransactionTab, setActiveTransactionTab] = useState('purchases');
     
     // Profile Logic
     const [isEditing, setIsEditing] = useState(false);
     const [tempName, setTempName] = useState(user?.name || '');
     const fileInputRef = useRef(null);
 
+    // Rating Modal state
+    const [showRatingModal, setShowRatingModal] = useState(false);
+    const [ratingTransactionId, setRatingTransactionId] = useState(null);
+
     // Fetch Books & Dashboard Features from Backend
+    const fetchDashboardData = async () => {
+        try {
+            setIsLoading(true);
+            const [myBooksRes, allBooksRes, featuresRes, purchasesRes, salesRes] = await Promise.all([
+                bookApi.getMy(),
+                bookApi.getAll(),
+                dashboardApi.getStats(user?.id || 1),
+                transactionApi.getPurchases(),
+                transactionApi.getSales()
+            ]);
+            setAllBooks(allBooksRes.data || []);
+            setDashboardFeatures(featuresRes.data);
+            setMyAnnonces(myBooksRes.data || []);
+            setMyPurchases(purchasesRes.data || []);
+            setMySales(salesRes.data || []);
+        } catch (error) {
+            console.error('Failed to fetch data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                setIsLoading(true);
-                const [myBooksRes, allBooksRes, featuresRes, purchasesRes, salesRes] = await Promise.all([
-                    bookApi.getMy(),
-                    bookApi.getAll(),
-                    dashboardApi.getStats(user?.id || 1),
-                    transactionApi.getPurchases(),
-                    transactionApi.getSales()
-                ]);
-                setAllBooks(allBooksRes.data || []);
-                setDashboardFeatures(featuresRes.data);
-                setMyAnnonces(myBooksRes.data || []);
-                setMyPurchases(purchasesRes.data || []);
-                setMySales(salesRes.data || []);
-            } catch (error) {
-                console.error('Failed to fetch data:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchDashboardData();
     }, []);
 
@@ -142,9 +150,14 @@ export default function StudentDashboard() {
         try {
             await transactionApi.complete(id);
             toast.success('Transaction marquée comme terminée !');
+            
+            // Trigger Rating Modal
+            setRatingTransactionId(id);
+            setShowRatingModal(true);
+
             await fetchDashboardData();
         } catch (error) {
-            toast.error('Erreur lors de la validation');
+            toast.error('Erreur lors de l\'validation');
         } finally {
             isProcessingRef.current.delete(id);
             setProcessingIds(prev => prev.filter(pid => pid !== id));
@@ -348,116 +361,146 @@ export default function StudentDashboard() {
                             {/* Mes Transactions COD */}
                             <motion.div className={styles.panel} variants={itemVariants}>
                                 <div className={styles.panelHeader}>
-                                    <h2>Mes Transactions (COD)</h2>
-                                    <div className={styles.transactionLegend}>
-                                        <ShieldCheck size={16} /> 100% sécurisé par yTera
+                                    <div className={styles.panelTitleGroup}>
+                                        <h2>Mes Transactions (COD)</h2>
+                                        <div className={styles.transactionLegend}>
+                                            <ShieldCheck size={14} /> Sécurisé par yTera
+                                        </div>
+                                    </div>
+                                    <div className={styles.tabSwitcher}>
+                                        <button 
+                                            className={activeTransactionTab === 'purchases' ? styles.tabBtnActive : styles.tabBtn}
+                                            onClick={() => setActiveTransactionTab('purchases')}
+                                        >
+                                            Mes Achats <span className={styles.tabBadge}>{myPurchases.length}</span>
+                                        </button>
+                                        <button 
+                                            className={activeTransactionTab === 'sales' ? styles.tabBtnActive : styles.tabBtn}
+                                            onClick={() => setActiveTransactionTab('sales')}
+                                        >
+                                            Mes Ventes <span className={styles.tabBadge}>{mySales.length}</span>
+                                        </button>
                                     </div>
                                 </div>
 
-                                <div className={styles.transactionTabs}>
-                                    <div className={styles.transactionSubCol}>
-                                        <h3 className={styles.subColTitle}>Mes Achats</h3>
-                                        <div className={styles.transactionList}>
-                                            {myPurchases.length === 0 ? (
-                                                <p className={styles.emptyText}>Aucun achat en cours.</p>
-                                            ) : myPurchases.map(t => (
-                                                <div key={t.id} className={styles.transactionCard}>
-                                                    <div className={styles.tImage}>
-                                                        <img src={getFullImageUrl(t.photoUrl)} alt="" />
+                                <div className={styles.transactionsContainer}>
+                                    <AnimatePresence mode="wait">
+                                        {activeTransactionTab === 'purchases' ? (
+                                            <motion.div 
+                                                key="purchases"
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: 10 }}
+                                                className={styles.transactionListScroll}
+                                            >
+                                                {myPurchases.length === 0 ? (
+                                                    <div className={styles.emptyTransactions}>
+                                                        <p className={styles.emptyText}>Aucun achat en cours.</p>
                                                     </div>
-                                                    <div className={styles.tInfo}>
-                                                        <h4>{t.ouvrage_titre}</h4>
-                                                        <div className={styles.tMeta}>
-                                                            <span className={styles.tStatus} style={{ color: getTransactionStatusLabel(t.status).color }}>
-                                                                {getTransactionStatusLabel(t.status).label}
-                                                            </span>
-                                                            <span className={styles.tPrice}>{t.amount} DH</span>
+                                                ) : myPurchases.map(t => (
+                                                    <div key={t.id} className={styles.transactionCard}>
+                                                        <div className={styles.tImage}>
+                                                            <img src={getFullImageUrl(t.photoUrl)} alt="" />
                                                         </div>
-                                                        {t.status === 'MEETING_SCHEDULED' && (
-                                                            <div className={styles.meetingInfo}>
-                                                                <MapPin size={12} /> {t.meeting_point}
-                                                                <Calendar size={12} /> {new Date(t.meeting_date).toLocaleDateString()}
+                                                        <div className={styles.tInfo}>
+                                                            <h4>{t.ouvrage_titre}</h4>
+                                                            <div className={styles.tMeta}>
+                                                                <span className={styles.tStatus} style={{ '--status-color': getTransactionStatusLabel(t.status).color }}>
+                                                                    {getTransactionStatusLabel(t.status).label}
+                                                                </span>
+                                                                <span className={styles.tPrice}>{t.amount} DH</span>
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                    <div className={styles.tActions}>
-                                                        {t.status === 'ACCEPTED' || t.status === 'MEETING_SCHEDULED' ? (
-                                                            <button 
-                                                                onClick={() => handleCompleteTransaction(t.id)} 
-                                                                className={styles.btnTSuccess}
-                                                                disabled={processingIds.includes(t.id)}
-                                                            >
-                                                                {processingIds.includes(t.id) ? <Loader2 size={12} className="animate-spin" /> : 'Terminer'}
-                                                            </button>
-                                                        ) : null}
-                                                        {t.status !== 'COMPLETED' && t.status !== 'CANCELLED' && (
-                                                            <button 
-                                                                onClick={() => handleCancelTransaction(t.id)} 
-                                                                className={styles.btnTCancel}
-                                                                disabled={processingIds.includes(t.id)}
-                                                            >
-                                                                {processingIds.includes(t.id) ? '⌛' : 'Annuler'}
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className={styles.transactionSubCol}>
-                                        <h3 className={styles.subColTitle}>Mes Ventes</h3>
-                                        <div className={styles.transactionList}>
-                                            {mySales.length === 0 ? (
-                                                <p className={styles.emptyText}>Aucune vente en cours.</p>
-                                            ) : mySales.map(t => (
-                                                <div key={t.id} className={styles.transactionCard}>
-                                                    <div className={styles.tImage}>
-                                                        <img src={getFullImageUrl(t.photoUrl)} alt="" />
-                                                    </div>
-                                                    <div className={styles.tInfo}>
-                                                        <h4>{t.ouvrage_titre}</h4>
-                                                        <p className={styles.buyerName}>Acheteur: {t.buyer_name}</p>
-                                                        <div className={styles.tMeta}>
-                                                            <span className={styles.tStatus} style={{ color: getTransactionStatusLabel(t.status).color }}>
-                                                                {getTransactionStatusLabel(t.status).label}
-                                                            </span>
-                                                            <span className={styles.tPrice}>{t.amount} DH</span>
+                                                            {t.status === 'MEETING_SCHEDULED' && (
+                                                                <div className={styles.meetingInfo}>
+                                                                    <span><MapPin size={12} /> {t.meeting_point}</span>
+                                                                    <span><Calendar size={12} /> {new Date(t.meeting_date).toLocaleDateString()}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className={styles.tActions}>
+                                                            {t.status === 'ACCEPTED' || t.status === 'MEETING_SCHEDULED' ? (
+                                                                <button 
+                                                                    onClick={() => handleCompleteTransaction(t.id)} 
+                                                                    className={styles.btnTSuccess}
+                                                                    disabled={processingIds.includes(t.id)}
+                                                                >
+                                                                    {processingIds.includes(t.id) ? <Loader2 size={12} className="animate-spin" /> : 'Terminer'}
+                                                                </button>
+                                                            ) : null}
+                                                            {t.status !== 'COMPLETED' && t.status !== 'CANCELLED' && (
+                                                                <button 
+                                                                    onClick={() => handleCancelTransaction(t.id)} 
+                                                                    className={styles.btnTCancel}
+                                                                    disabled={processingIds.includes(t.id)}
+                                                                >
+                                                                    {processingIds.includes(t.id) ? '⌛' : 'Annuler'}
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                    <div className={styles.tActions}>
-                                                        {t.status === 'PENDING' && (
-                                                            <button 
-                                                                onClick={() => handleAcceptTransaction(t.id)} 
-                                                                className={styles.btnTPrimary}
-                                                                disabled={processingIds.includes(t.id)}
-                                                            >
-                                                                {processingIds.includes(t.id) ? <Loader2 size={12} className="animate-spin" /> : 'Accepter'}
-                                                            </button>
-                                                        ) }
-                                                        {(t.status === 'ACCEPTED' || t.status === 'MEETING_SCHEDULED') && (
-                                                            <button 
-                                                                onClick={() => handleCompleteTransaction(t.id)} 
-                                                                className={styles.btnTSuccess}
-                                                                disabled={processingIds.includes(t.id)}
-                                                            >
-                                                                {processingIds.includes(t.id) ? <Loader2 size={12} className="animate-spin" /> : 'Valider'}
-                                                            </button>
-                                                        )}
-                                                        {t.status !== 'COMPLETED' && t.status !== 'CANCELLED' && (
-                                                            <button 
-                                                                onClick={() => handleCancelTransaction(t.id)} 
-                                                                className={styles.btnTCancel}
-                                                                disabled={processingIds.includes(t.id)}
-                                                            >
-                                                                {processingIds.includes(t.id) ? '⌛' : 'Annuler'}
-                                                            </button>
-                                                        )}
+                                                ))}
+                                            </motion.div>
+                                        ) : (
+                                            <motion.div 
+                                                key="sales"
+                                                initial={{ opacity: 0, x: 10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: -10 }}
+                                                className={styles.transactionListScroll}
+                                            >
+                                                {mySales.length === 0 ? (
+                                                    <div className={styles.emptyTransactions}>
+                                                        <p className={styles.emptyText}>Aucune vente en cours.</p>
                                                     </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                                ) : mySales.map(t => (
+                                                    <div key={t.id} className={styles.transactionCard}>
+                                                        <div className={styles.tImage}>
+                                                            <img src={getFullImageUrl(t.photoUrl)} alt="" />
+                                                        </div>
+                                                        <div className={styles.tInfo}>
+                                                            <h4>{t.ouvrage_titre}</h4>
+                                                            <p className={styles.buyerName}>Acheteur: {t.buyer_name}</p>
+                                                            <div className={styles.tMeta}>
+                                                                <span className={styles.tStatus} style={{ '--status-color': getTransactionStatusLabel(t.status).color }}>
+                                                                    {getTransactionStatusLabel(t.status).label}
+                                                                </span>
+                                                                <span className={styles.tPrice}>{t.amount} DH</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className={styles.tActions}>
+                                                            {t.status === 'PENDING' && (
+                                                                <button 
+                                                                    onClick={() => handleAcceptTransaction(t.id)} 
+                                                                    className={styles.btnTPrimary}
+                                                                    disabled={processingIds.includes(t.id)}
+                                                                >
+                                                                    {processingIds.includes(t.id) ? <Loader2 size={12} className="animate-spin" /> : 'Accepter'}
+                                                                </button>
+                                                            ) }
+                                                            {(t.status === 'ACCEPTED' || t.status === 'MEETING_SCHEDULED') && (
+                                                                <button 
+                                                                    onClick={() => handleCompleteTransaction(t.id)} 
+                                                                    className={styles.btnTSuccess}
+                                                                    disabled={processingIds.includes(t.id)}
+                                                                >
+                                                                    {processingIds.includes(t.id) ? <Loader2 size={12} className="animate-spin" /> : 'Valider'}
+                                                                </button>
+                                                            )}
+                                                            {t.status !== 'COMPLETED' && t.status !== 'CANCELLED' && (
+                                                                <button 
+                                                                    onClick={() => handleCancelTransaction(t.id)} 
+                                                                    className={styles.btnTCancel}
+                                                                    disabled={processingIds.includes(t.id)}
+                                                                >
+                                                                    {processingIds.includes(t.id) ? '⌛' : 'Annuler'}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
                             </motion.div>
                         </div>
@@ -549,6 +592,16 @@ export default function StudentDashboard() {
                     </div>
                 </motion.div>
             </div>
+
+            <AnimatePresence>
+                {showRatingModal && (
+                    <PlatformRatingModal 
+                        transactionId={ratingTransactionId} 
+                        onClose={() => setShowRatingModal(false)} 
+                    />
+                )}
+            </AnimatePresence>
+
         </div>
     );
 }

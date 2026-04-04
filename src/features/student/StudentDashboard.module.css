@@ -394,46 +394,165 @@
 }
 
 /* ====== MES TRANSACTIONS COD ====== */
-.transactionLegend {
-    display: flex; align-items: center; gap: 0.4rem; font-size: 0.72rem;
-    font-weight: 700; color: #10b981; text-transform: uppercase;
-    background: rgba(16,185,129,0.08); padding: 0.3rem 0.7rem; border-radius: 8px;
+.panelTitleGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
-.transactionTabs { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
-.transactionSubCol { display: flex; flex-direction: column; gap: 1rem; }
-.subColTitle { font-size: 0.9rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
-.transactionList { display: flex; flex-direction: column; gap: 0.75rem; }
+.transactionLegend {
+    display: flex; align-items: center; gap: 0.3rem; font-size: 0.65rem;
+    font-weight: 800; color: #10b981; text-transform: uppercase;
+    background: rgba(16,185,129,0.08); padding: 0.25rem 0.5rem; border-radius: 6px;
+    width: fit-content;
+}
+
+.tabSwitcher {
+    display: flex;
+    background: rgba(0, 0, 0, 0.03);
+    padding: 3px;
+    border-radius: 10px;
+    gap: 2px;
+}
+
+.tabBtn, .tabBtnActive {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tabBtn {
+    background: transparent;
+    color: var(--text-muted);
+}
+
+.tabBtnActive {
+    background: white;
+    color: var(--accent-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tabBadge {
+    background: var(--accent-color);
+    color: white;
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 10px;
+}
+
+.transactionsContainer {
+    margin-top: 1.25rem;
+}
+
+.transactionListScroll {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.transactionListScroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.transactionListScroll::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
 
 .transactionCard {
-    display: flex; gap: 0.75rem; padding: 0.75rem; border-radius: 14px; background: var(--bg-primary);
-    border: 1px solid var(--border-color); align-items: center;
+    display: flex; 
+    gap: 1rem; 
+    padding: 1rem; 
+    border-radius: 16px; 
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    align-items: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
-.tImage { width: 50px; height: 65px; border-radius: 6px; overflow: hidden; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+.transactionCard:hover {
+    transform: translateY(-2px);
+    background: white;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    border-color: var(--accent-color);
+}
+
+.tImage { 
+    width: 55px; 
+    height: 75px; 
+    border-radius: 8px; 
+    overflow: hidden; 
+    flex-shrink: 0; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+    background: #f1f5f9;
+}
 .tImage img { width: 100%; height: 100%; object-fit: cover; }
 
 .tInfo { flex: 1; }
-.tInfo h4 { font-size: 0.9rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.2rem; }
-.buyerName { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; font-weight: 600; }
-.tMeta { display: flex; align-items: center; gap: 0.75rem; }
-.tStatus { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
-.tPrice { font-size: 0.85rem; font-weight: 800; color: var(--text-secondary); }
+.tInfo h4 { font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.25rem; }
+.buyerName { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem; font-weight: 600; }
+.tMeta { display: flex; align-items: center; gap: 1rem; }
+
+.tStatus { 
+    font-size: 0.65rem; 
+    font-weight: 800; 
+    text-transform: uppercase; 
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--status-color), transparent 90%);
+    color: var(--status-color);
+    letter-spacing: 0.02em;
+}
+
+.tPrice { font-size: 0.9rem; font-weight: 800; color: var(--text-secondary); }
 
 .meetingInfo {
-    margin-top: 0.5rem; display: flex; align-items: center; gap: 0.6rem;
-    font-size: 0.7rem; color: var(--text-muted); font-weight: 600;
+    margin-top: 0.6rem; 
+    display: flex; 
+    flex-wrap: wrap;
+    align-items: center; 
+    gap: 1rem;
 }
+
+.meetingInfo span {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem; 
+    color: var(--text-muted); 
+    font-weight: 600;
+}
+
 .meetingInfo svg { color: var(--accent-color); }
 
-.tActions { display: flex; flex-direction: column; gap: 0.35rem; }
+.tActions { display: flex; flex-direction: column; gap: 0.4rem; }
 .btnTPrimary, .btnTSuccess, .btnTCancel {
-    padding: 0.4rem 0.75rem; border-radius: 8px; font-size: 0.75rem; font-weight: 800; border: none; cursor: pointer; transition: all 0.2s;
+    padding: 0.45rem 0.9rem; border-radius: 10px; font-size: 0.75rem; font-weight: 800; border: none; cursor: pointer; transition: all 0.2s;
+    min-width: 90px;
+    text-align: center;
 }
 .btnTPrimary { background: var(--accent-color); color: white; }
-.btnTPrimary:hover { background: var(--accent-hover); }
+.btnTPrimary:hover { background: var(--accent-hover); transform: scale(1.02); }
 .btnTSuccess { background: #10b981; color: white; }
-.btnTSuccess:hover { background: #059669; }
+.btnTSuccess:hover { background: #059669; transform: scale(1.02); }
 .btnTCancel { background: #f1f5f9; color: #64748b; }
 .btnTCancel:hover { background: #fee2e2; color: #ef4444; }
+
+.emptyTransactions {
+    padding: 3rem;
+    text-align: center;
+}
 
 .emptyText { font-size: 0.85rem; color: var(--text-muted); font-style: italic; }
 

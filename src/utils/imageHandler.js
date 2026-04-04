@@ -12,14 +12,13 @@ export const getFullImageUrl = (url) => {
     
     // Si l'URL contient '/admin/books/', c'est une image mockée (legacy)
     if (url.includes('/admin/books/')) {
-        // Déjà préfixé par /admin, on s'assure juste du bon format
-        return url; 
+        // On enlève le préfixe /admin/ si nécessaire pour correspondre au nouveau base path
+        return url.replace('/admin/books/', '/books/'); 
     }
     
     // Si l'URL commence par /books/, c'est une image dans le dossier public du frontend
-    // On doit ajouter le préfixe BASE_PATH si le projet est configuré avec base: '/admin/'
     if (url.startsWith('/books/')) {
-        return `${BASE_PATH}${url}`;
+        return url; // Plus besoin de BASE_PATH car on est à la racine
     }
 
     // Pour les autres URLs (commençant par /uploads/...), on utilise le serveur backend

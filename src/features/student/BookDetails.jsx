@@ -50,6 +50,8 @@ export default function BookDetails() {
     const [showCodModal, setShowCodModal] = useState(false);
     const [codData, setCodData] = useState({ meeting_point: '', meeting_date: '' });
     const [isCodLoading, setIsCodLoading] = useState(false);
+    const [isSendingContact, setIsSendingContact] = useState(false);
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -95,11 +97,12 @@ export default function BookDetails() {
     const slugify = (text) => text.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
     const handleSendContact = async () => {
-        if (!contactMsg.trim() || !book.exemplaire?.proprietaire?.id) return;
+        if (!contactMsg.trim() || !book.exemplaire?.proprietaire?.id || isSendingContact) return;
         
         try {
+            setIsSendingContact(true);
             // 1. Start or get conversation
-            const convRes = await conversationApi.startConversation(book.exemplaire.proprietaire.id);
+            const convRes = await conversationApi.startConversation(book.exemplaire.proprietaire.id, book.id);
             const convId = convRes.data.conversationId;
 
             // 2. Send initial message
@@ -114,10 +117,12 @@ export default function BookDetails() {
             // 3. Redirect to messages after a short delay
             setTimeout(() => { 
                 navigate('/student-dashboard/messages');
-            }, 1500);
+            }, 1000);
         } catch (error) {
             console.error('Failed to send contact message:', error);
             toast.error('Erreur lors de l\'envoi du message');
+        } finally {
+            setIsSendingContact(false);
         }
     };
 
@@ -308,8 +313,8 @@ export default function BookDetails() {
                                 <textarea className={styles.modalTextarea} rows={4}
                                     placeholder="Bonjour, je suis intéressé(e) par votre manuel..."
                                     value={contactMsg} onChange={e => setContactMsg(e.target.value)} />
-                                <button className={styles.modalSend} onClick={handleSendContact}>
-                                    <Send size={16} /> Envoyer le message
+                                <button className={styles.modalSend} onClick={handleSendContact} disabled={isSendingContact}>
+                                    {isSendingContact ? 'Envoi...' : <><Send size={16} /> Envoyer le message</>}
                                 </button>
                             </>
                         )}

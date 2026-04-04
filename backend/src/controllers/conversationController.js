@@ -42,10 +42,25 @@ export const sendMessage = async (req, res) => {
 
 export const createOrGetConversation = async (req, res) => {
     try {
-        const { recepteurId } = req.body;
+        const { recepteurId, annonceId } = req.body;
         const emetteurId = req.user?.id || 1;
-        const convId = await conversationRepository.findOrCreateConversation(emetteurId, recepteurId);
+        const convId = await conversationRepository.findOrCreateConversation(emetteurId, recepteurId, annonceId);
         res.json({ conversationId: convId });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const updateMessageStatus = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const { metadata } = req.body;
+        const success = await conversationRepository.updateMessageMetadata(messageId, metadata);
+        if (success) {
+            res.json({ success: true });
+        } else {
+            res.status(404).json({ error: 'Message not found' });
+        }
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

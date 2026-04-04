@@ -7,7 +7,7 @@ import { AuthProvider } from './features/auth/AuthProvider.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Router basename="/admin">
+    <Router>
         <AuthProvider>
           <App />
         </AuthProvider>

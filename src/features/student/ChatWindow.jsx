@@ -1,15 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Search, MoreVertical, Phone, Video, Info, Image as ImageIcon, Smile, Paperclip, MessageSquare, Calendar, MapPin, Clock, X, Loader2 } from 'lucide-react';
+import { 
+    Send, Search, MoreVertical, Phone, Video, Info, 
+    Image as ImageIcon, Smile, Paperclip, MessageSquare, 
+    Calendar, MapPin, Clock, X, Loader2, ShieldCheck, ShoppingCart 
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { conversationApi, bookApi } from '../../api/client';
+import { conversationApi, bookApi, transactionApi } from '../../api/client';
 import { useAuth } from '../auth/useAuth';
+import { getFullImageUrl } from '../../utils/imageHandler';
 import styles from './ChatWindow.module.css';
 
 const CAMPUS_LOCATIONS = ['Bibliothèque (BU)', 'Cafétéria Centrale', 'Entrée Fac', 'Jardin des Sciences', 'Parking Étudiants'];
 
 export default function ChatWindow() {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [conversations, setConversations] = useState([]);
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -21,6 +29,11 @@ export default function ChatWindow() {
     const [showMeetingModal, setShowMeetingModal] = useState(false);
     const [meetingData, setMeetingData] = useState({ book: '', location: CAMPUS_LOCATIONS[0], time: 'Demain, 10:00' });
     
+    // COD Transaction Modal
+    const [showCodModal, setShowCodModal] = useState(false);
+    const [codData, setCodData] = useState({ meeting_point: '', meeting_date: '' });
+    const [isCodLoading, setIsCodLoading] = useState(false);
+
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -63,11 +76,19 @@ export default function ChatWindow() {
             try {
                 setIsLoadingMsgs(true);
                 const response = await conversationApi.getMessages(selectedConversation.id);
-                setMessages(response.data);
+                // Ensure unique messages only
+                setMessages(prev => {
+                    const newMessages = response.data;
+                    const combined = [...prev, ...newMessages];
+                    const unique = Array.from(new Map(combined.map(m => [m.id, m])).values());
+                    return unique.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                });
                 
-                // Also refresh conversations to update last message snippets
+                // Also refresh conversations to update last message snippets and book info
                 const convRes = await conversationApi.getConversations();
                 setConversations(convRes.data);
+                const updated = convRes.data.find(c => c.id === selectedConversation.id);
+                if (updated) setSelectedConversation(updated);
             } catch (error) {
                 console.error('Failed to load messages:', error);
             } finally {
@@ -103,7 +124,12 @@ export default function ChatWindow() {
             });
             // Refresh messages immediately
             const response = await conversationApi.getMessages(selectedConversation.id);
-            setMessages(response.data);
+            setMessages(prev => {
+                const newMessages = response.data;
+                const combined = [...prev, ...newMessages];
+                const unique = Array.from(new Map(combined.map(m => [m.id, m])).values());
+                return unique.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            });
         } catch (error) {
             console.error('Failed to send message:', error);
             toast.error('Échec de l\'envoi');
@@ -123,12 +149,87 @@ export default function ChatWindow() {
             setShowMeetingModal(false);
             toast.success('Rendez-vous proposé !');
             
-            // Refresh
+            // Refresh messages immediately
             const response = await conversationApi.getMessages(selectedConversation.id);
-            setMessages(response.data);
+            // Ensure unique messages only
+            setMessages(prev => {
+                const newMessages = response.data;
+                const combined = [...prev, ...newMessages];
+                const unique = Array.from(new Map(combined.map(m => [m.id, m])).values());
+                return unique.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            });
         } catch (error) {
             console.error('Failed to propose meeting:', error);
             toast.error('Erreur lors de la proposition');
+        }
+    };
+
+    const handleInitiateCodFromChat = async () => {
+        if (!codData.meeting_point || !codData.meeting_date || !selectedConversation.annonce_id) {
+            toast.error('Veuillez remplir tous les champs.');
+            return;
+        }
+
+        try {
+            setIsCodLoading(true);
+            const partner = getPartner(selectedConversation);
+            
+            await transactionApi.create({
+                annonce_id: selectedConversation.annonce_id,
+                seller_id: partner.id,
+                amount: selectedConversation.annonce_prix,
+                meeting_point: codData.meeting_point,
+                meeting_date: codData.meeting_date
+            });
+
+            toast.success('Demande d\'achat envoyée !');
+            setShowCodModal(false);
+            
+            // Also notify in chat with specialized type
+            await conversationApi.sendMessage(selectedConversation.id, {
+                text: `J'ai envoyé une proposition d'achat officielle pour "${selectedConversation.book_title}".`,
+                type: 'transaction_proposal',
+                appointmentDetails: {
+                    book_title: selectedConversation.book_title,
+                    amount: selectedConversation.annonce_prix,
+                    meeting_point: codData.meeting_point,
+                    meeting_date: codData.meeting_date
+                }
+            });
+            
+            const response = await conversationApi.getMessages(selectedConversation.id);
+            setMessages(prev => {
+                const newMessages = response.data;
+                const combined = [...prev, ...newMessages];
+                const unique = Array.from(new Map(combined.map(m => [m.id, m])).values());
+                return unique.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            });
+        } catch (error) {
+            console.error('Failed to initiate COD from chat:', error);
+            toast.error(error.response?.data?.error || 'Erreur lors de la demande d\'achat');
+        } finally {
+            setIsCodLoading(false);
+        }
+    };
+
+    const handleUpdateAppointmentStatus = async (msgId, currentMetadata, newStatus) => {
+        try {
+            const updatedMetadata = { ...currentMetadata, status: newStatus };
+            await conversationApi.updateMessage(msgId, { metadata: updatedMetadata });
+            
+            toast.success(newStatus === 'ACCEPTED' ? 'Rencontre acceptée !' : 'Rencontre déclinée');
+            
+            // Refresh messages to show the update on both sides
+            const response = await conversationApi.getMessages(selectedConversation.id);
+            setMessages(prev => {
+                const newMessages = response.data;
+                const combined = [...prev, ...newMessages];
+                const unique = Array.from(new Map(combined.map(m => [m.id, m])).values());
+                return unique.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            });
+        } catch (error) {
+            console.error('Failed to update status:', error);
+            toast.error('Erreur lors de la mise à jour');
         }
     };
 
@@ -151,6 +252,9 @@ export default function ChatWindow() {
     const getAvatarLetter = (nom, prenom) => {
         return (prenom || nom || '?').charAt(0).toUpperCase();
     };
+
+    // Determine if current user is the buyer for this conversation
+    const isBuyer = selectedConversation?.user1_id === user?.id; // In our startConversation logic, emetteur is user1
 
     return (
         <div className={styles.chatContainer}>
@@ -188,6 +292,7 @@ export default function ChatWindow() {
                                     <div className={styles.contactBottom}>
                                         <p>{c.last_message || 'Cliquer pour voir la discussion'}</p>
                                     </div>
+                                    {c.book_title && <div className={styles.bookTag}>📖 {c.book_title}</div>}
                                 </div>
                             </div>
                         );
@@ -216,6 +321,22 @@ export default function ChatWindow() {
                             </div>
                         </div>
 
+                        {/* Linked Annonce Banner */}
+                        {selectedConversation.book_title && (
+                            <div className={styles.linkedAnnonce}>
+                                <img src={getFullImageUrl(selectedConversation.book_photo)} alt="" className={styles.annonceThumb} />
+                                <div className={styles.annonceDetails}>
+                                    <h4>Discussion sur : {selectedConversation.book_title}</h4>
+                                    <p>{selectedConversation.annonce_prix} DH</p>
+                                </div>
+                                {isBuyer && (
+                                    <button className={styles.btnCodAction} onClick={() => setShowCodModal(true)}>
+                                        <ShoppingCart size={14} /> Acheter (COD)
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
                         <div className={styles.chatMessages}>
                             {isLoadingMsgs && messages.length === 0 ? (
                                 <div className={styles.loadingMsgs}><Loader2 className={styles.spin} /></div>
@@ -224,9 +345,11 @@ export default function ChatWindow() {
                                     {messages.map((msg) => {
                                         const isMe = msg.sender_id === user?.id;
                                         const isAppointment = msg.message_type === 'APPOINTMENT';
-                                        let appDetails = null;
-                                        if (isAppointment && msg.metadata) {
-                                            try { appDetails = typeof msg.metadata === 'string' ? JSON.parse(msg.metadata) : msg.metadata; } catch(e) { console.error(e); }
+                                        const isTransaction = msg.message_type === 'TRANSACTION_PROPOSAL';
+                                        
+                                        let metadata = null;
+                                        if ((isAppointment || isTransaction) && msg.metadata) {
+                                            try { metadata = typeof msg.metadata === 'string' ? JSON.parse(msg.metadata) : msg.metadata; } catch(e) { console.error(e); }
                                         }
 
                                         return (
@@ -243,26 +366,64 @@ export default function ChatWindow() {
                                                     </div>
                                                 )}
                                                 
-                                                {isAppointment && appDetails ? (
+                                                {isAppointment && metadata ? (
                                                     <div className={`${styles.appointmentCardMsg} ${isMe ? styles.apMe : styles.apThem}`}>
                                                         <div className={styles.apHeader}>
-                                                            <Calendar size={18} />
-                                                            <span>Proposition de RDV</span>
+                                                            <ShoppingCart size={18} />
+                                                            <span>Proposition d'achat (COD)</span>
                                                         </div>
                                                         <div className={styles.apBody}>
-                                                            <p className={styles.apTargetBook}><strong>{appDetails.book}</strong></p>
+                                                            <p className={styles.apTargetBook}><strong>{metadata.book}</strong></p>
                                                             <div className={styles.apDetails}>
-                                                                <span><Clock size={14} /> {appDetails.time}</span>
-                                                                <span><MapPin size={14} /> {appDetails.location}</span>
+                                                                <span><Clock size={14} /> {metadata.time}</span>
+                                                                <span><MapPin size={14} /> {metadata.location}</span>
                                                             </div>
                                                         </div>
                                                         <div className={styles.apFooter}>
-                                                            {isMe ? (
-                                                                <span className={styles.apStatusWaiting}>En attente de confirmation...</span>
+                                                            {metadata.status === 'ACCEPTED' ? (
+                                                                <span className={styles.apStatusInfo} style={{ color: '#10b981', fontWeight: 800 }}>Accepté ✅</span>
+                                                            ) : metadata.status === 'DECLINED' ? (
+                                                                <span className={styles.apStatusInfo} style={{ color: '#ef4444', fontWeight: 800 }}>Refusé ❌</span>
+                                                            ) : isMe ? (
+                                                                <span className={styles.apStatusWaiting}>En attente de réponse...</span>
                                                             ) : (
                                                                 <div className={styles.apActions}>
-                                                                    <button className={styles.btnConfirmAp} onClick={() => toast.success('RDV Confirmé !')}>Confirmer</button>
-                                                                    <button className={styles.btnRefuseAp}>Refuser</button>
+                                                                    <button className={styles.btnConfirmAp} onClick={() => handleUpdateAppointmentStatus(msg.id, metadata, 'ACCEPTED')}>Accepter</button>
+                                                                    <button className={styles.btnRefuseAp} onClick={() => handleUpdateAppointmentStatus(msg.id, metadata, 'DECLINED')}>Décliner</button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ) : isTransaction && metadata ? (
+                                                    <div className={`${styles.transactionCardMsg} ${isMe ? styles.trMe : styles.trThem}`}>
+                                                        <div className={styles.trHeader}>
+                                                            <ShieldCheck size={18} />
+                                                            <span>ACHAT OFFICIEL (COD)</span>
+                                                        </div>
+                                                        <div className={styles.trBody}>
+                                                            <p className={styles.trTargetBook}>💰 Proposition d'achat pour : <strong>{metadata.book_title || metadata.book}</strong></p>
+                                                            <p className={styles.trPrice}>Montant : {metadata.amount || selectedConversation.annonce_prix} DH</p>
+                                                            <div className={styles.apDetails}>
+                                                                <span><Calendar size={14} /> {new Date(metadata.meeting_date).toLocaleString()}</span>
+                                                                <span><MapPin size={14} /> {metadata.meeting_point}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className={styles.trFooter}>
+                                                            {msg.transaction_status === 'ACCEPTED' ? (
+                                                                <span className={styles.trStatusInfo} style={{ color: '#10b981', fontWeight: 800 }}>✅ Demande Acceptée !</span>
+                                                            ) : msg.transaction_status === 'MEETING_SCHEDULED' ? (
+                                                                <span className={styles.trStatusInfo} style={{ color: '#0284c7', fontWeight: 800 }}>📅 Programmée : Remise en cours</span>
+                                                            ) : msg.transaction_status === 'COMPLETED' ? (
+                                                                <span className={styles.trStatusInfo} style={{ color: '#10b981', fontWeight: 800 }}>✅ Transaction Terminée avec succès !</span>
+                                                            ) : msg.transaction_status === 'CANCELLED' ? (
+                                                                <span className={styles.trStatusInfo} style={{ color: '#ef4444', fontWeight: 800 }}>❌ Transaction Annulée</span>
+                                                            ) : isMe ? (
+                                                                <span className={styles.trStatusWaiting}>🔒 Demande en attente de validation officielle</span>
+                                                            ) : (
+                                                                <div className={styles.trActions}>
+                                                                    <button className={styles.btnGoToDashboard} onClick={() => navigate('/student-dashboard/dashboard')}>
+                                                                        Gérer dans le Dashboard
+                                                                    </button>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -284,10 +445,12 @@ export default function ChatWindow() {
                         </div>
 
                         <form className={styles.chatInputArea} onSubmit={handleSendMessage}>
-                            <button type="button" className={`${styles.attachBtn} ${styles.btnRdv}`} onClick={() => setShowMeetingModal(true)}>
-                                <Calendar size={20} />
-                                <span>Fixer RDV</span>
-                            </button>
+                            {isBuyer && selectedConversation.book_title && (
+                                <button type="button" className={`${styles.attachBtn} ${styles.btnCodActionInput}`} onClick={() => setShowCodModal(true)}>
+                                    <ShoppingCart size={20} />
+                                    <span>Acheter (COD)</span>
+                                </button>
+                            )}
 
                             <input 
                                 type="text" 
@@ -301,6 +464,46 @@ export default function ChatWindow() {
                             </button>
                         </form>
 
+                        {/* ====== COD PURCHASE MODAL ====== */}
+                        <AnimatePresence>
+                            {showCodModal && (
+                                <div className={styles.modalOverlay} onClick={() => setShowCodModal(false)}>
+                                    <motion.div className={styles.codModal} onClick={e => e.stopPropagation()}
+                                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.9, y: 20 }}>
+                                        <button className={styles.modalClose} onClick={() => setShowCodModal(false)}><X size={20} /></button>
+                                        <div className={styles.modalBody}>
+                                            <div className={styles.modalIcon} style={{ background: 'var(--gradient-vente)', width: 60, height: 60, borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: 'white' }}>
+                                                <ShieldCheck size={32} />
+                                            </div>
+                                            <h3 style={{ textAlign:'center', marginBottom:'0.5rem' }}>Acheter ce manuel</h3>
+                                            <p style={{ textAlign:'center', color:'var(--text-secondary)', fontSize:'0.9rem', marginBottom:'1.5rem' }}>
+                                                Vous allez proposer un achat en espèces de <strong>{selectedConversation.annonce_prix} DH</strong> pour <strong>"{selectedConversation.book_title}"</strong>.
+                                            </p>
+
+                                            <div className={styles.formGroup}>
+                                                <label><MapPin size={14} /> Lieu de rencontre souhaité</label>
+                                                <input type="text" placeholder="Ex: Bibliothèque Centrale"
+                                                    value={codData.meeting_point} onChange={e => setCodData({ ...codData, meeting_point: e.target.value })} />
+                                            </div>
+                                            <div className={styles.formGroup}>
+                                                <label><Calendar size={14} /> Date & Heure proposées</label>
+                                                <input type="datetime-local"
+                                                    value={codData.meeting_date} onChange={e => setCodData({ ...codData, meeting_date: e.target.value })} />
+                                            </div>
+                                        </div>
+                                        <div className={styles.modalFooter}>
+                                            <button className={styles.btnCancel} onClick={() => setShowCodModal(false)}>Annuler</button>
+                                            <button className={styles.btnSubmit} onClick={handleInitiateCodFromChat} disabled={isCodLoading}>
+                                                {isCodLoading ? <Loader2 size={18} className={styles.spin} /> : 'Confirmer l\'achat'}
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                </div>
+                            )}
+                        </AnimatePresence>
+
                         {/* ====== MEETING PROPOSAL MODAL ====== */}
                         <AnimatePresence>
                             {showMeetingModal && (
@@ -312,7 +515,7 @@ export default function ChatWindow() {
                                         exit={{ opacity: 0, scale: 0.9 }}
                                     >
                                         <div className={styles.modalHeader}>
-                                            <h3>🤝 Planifier une remise</h3>
+                                            <h3>🤝 Planifier un achat COD</h3>
                                             <button onClick={() => setShowMeetingModal(false)}><X size={20} /></button>
                                         </div>
                                         
@@ -357,7 +560,7 @@ export default function ChatWindow() {
 
                                         <div className={styles.modalFooter}>
                                             <button className={styles.btnCancel} onClick={() => setShowMeetingModal(false)}>Annuler</button>
-                                            <button className={styles.btnSubmit} onClick={handleProposeMeeting}>Proposer le RDV</button>
+                                            <button className={styles.btnSubmit} onClick={handleProposeMeeting}>Confirmer COD</button>
                                         </div>
                                     </motion.div>
                                 </div>
