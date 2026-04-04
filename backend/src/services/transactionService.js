@@ -1,6 +1,7 @@
 import transactionRepository from '../repositories/transactionRepository.js';
 import annonceRepository from '../repositories/annonceRepository.js';
 import notificationRepository from '../repositories/notificationRepository.js';
+import pool from '../config/db.js';
 
 class TransactionService {
     async createTransaction(data) {
@@ -15,12 +16,14 @@ class TransactionService {
 
         // 3. Notify the seller
         const annonce = await annonceRepository.findById(data.annonce_id);
+        const [buyer] = await pool.query('SELECT nom FROM users WHERE id = ?', [data.buyer_id]);
+        const buyerName = buyer?.[0]?.nom || 'Un étudiant';
         const bookTitle = annonce?.exemplaire?.ouvrage?.titre || 'votre livre';
         
         await notificationRepository.create(
             data.seller_id,
             'Nouvelle demande d\'achat',
-            `Un étudiant souhaite acheter "${bookTitle}" en espèces (COD). Veuillez consulter vos ventes.`,
+            `${buyerName} souhaite acheter "${bookTitle}" en espèces (COD). Veuillez consulter vos ventes.`,
             'INFO'
         );
 

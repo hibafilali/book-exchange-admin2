@@ -99,9 +99,8 @@ export default function StudentDashboard() {
         try {
             await transactionApi.accept(id);
             toast.success('Transaction acceptée !');
-            // Refresh
-            const salesRes = await transactionApi.getSales();
-            setMySales(salesRes.data);
+            // Global Refresh
+            await fetchDashboardData();
         } catch (error) {
             toast.error('Erreur lors de l\'acceptation');
         }
@@ -112,10 +111,8 @@ export default function StudentDashboard() {
         try {
             await transactionApi.cancel(id);
             toast.success('Transaction annulée');
-            // Refresh
-            const [pRes, sRes] = await Promise.all([transactionApi.getPurchases(), transactionApi.getSales()]);
-            setMyPurchases(pRes.data);
-            setMySales(sRes.data);
+            // Global Refresh
+            await fetchDashboardData();
         } catch (error) {
             toast.error('Erreur lors de l\'annulation');
         }
@@ -125,10 +122,8 @@ export default function StudentDashboard() {
         try {
             await transactionApi.complete(id);
             toast.success('Transaction marquée comme terminée !');
-            // Refresh
-            const [pRes, sRes] = await Promise.all([transactionApi.getPurchases(), transactionApi.getSales()]);
-            setMyPurchases(pRes.data);
-            setMySales(sRes.data);
+            // Global Refresh
+            await fetchDashboardData();
         } catch (error) {
             toast.error('Erreur lors de la validation');
         }
@@ -432,13 +427,30 @@ export default function StudentDashboard() {
                                             <div className={styles.actionTop}>
                                                 <div className={styles.actionAvatar}>{act.avatar}</div>
                                                 <div className={styles.actionText}>
-                                                    <p><strong>{act.avec}</strong> a demandé <em>{act.livre}</em></p>
+                                                    {act.type === 'COD_REQUEST' ? (
+                                                        <p><strong>{act.avec}</strong> souhaite acheter <em>{act.livre}</em></p>
+                                                    ) : (
+                                                        <p><strong>{act.avec}</strong> a demandé <em>{act.livre}</em></p>
+                                                    )}
                                                     <span className={styles.actionTime}>{act.temps}</span>
                                                 </div>
                                             </div>
                                             <div className={styles.actionBtns}>
-                                                <button className={styles.btnAccept}><CheckCircle size={14} /> Accepter</button>
-                                                <button className={styles.btnRefuse}><XCircle size={14} /> Refuser</button>
+                                                {act.type === 'COD_REQUEST' ? (
+                                                    <>
+                                                        <button className={styles.btnAccept} onClick={() => handleAcceptTransaction(act.transactionId)}>
+                                                            <CheckCircle size={14} /> Accepter
+                                                        </button>
+                                                        <button className={styles.btnRefuse} onClick={() => handleCancelTransaction(act.transactionId)}>
+                                                            <XCircle size={14} /> Refuser
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <button className={styles.btnAccept}><CheckCircle size={14} /> Confirmer</button>
+                                                        <button className={styles.btnRefuse}><XCircle size={14} /> Plus tard</button>
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
