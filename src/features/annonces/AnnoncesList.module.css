@@ -237,6 +237,35 @@
 .restoreBtn:hover { background: #eff6ff; color: #3b82f6; border-color: #3b82f6; }
 .viewBtn:hover { background: #f1f5f9; color: #ff5722; border-color: #ff5722; }
 
+.historyBtn {
+    position: relative;
+}
+
+.historyBtn:hover {
+    background: #3b82f6 !important;
+    color: white !important;
+    border-color: #3b82f6 !important;
+}
+
+.historyCountBadge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #ef4444;
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 10;
+}
+
 /* Pagination */
 .pagination {
     display: flex;
@@ -295,10 +324,19 @@
 }
 
 .timelineContent {
-    background: #f9fafb;
-    padding: 10px 14px;
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px);
+    padding: 14px 18px;
+    border-radius: 16px;
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+}
+.timelineContent:hover {
+    transform: translateX(4px);
+    background: #fff;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+    border-color: #3b82f6;
 }
 
 .pageBtn {

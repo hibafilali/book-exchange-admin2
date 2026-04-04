@@ -30,7 +30,8 @@ class AnnonceRepository {
                 e.id as exemplaire_id, e.etat, e.photoUrl,
                 o.id as ouvrage_id, o.titre, o.auteur, o.isbn,
                 c.id as categorie_id, c.label as categorie_label,
-                u.id as proprietaire_id, u.nom, u.filiere, u.etablissement, u.ville, u.nbEchanges, u.avatarUrl
+                u.id as proprietaire_id, u.nom, u.filiere, u.etablissement, u.ville, u.nbEchanges, u.avatarUrl,
+                (SELECT COUNT(*) FROM transactions t JOIN annonces a2 ON t.annonce_id = a2.id WHERE a2.exemplaire_id = e.id) as transaction_count
             FROM annonces a
             INNER JOIN exemplaires e ON a.exemplaire_id = e.id
             INNER JOIN ouvrages o ON e.ouvrage_id = o.id
@@ -55,7 +56,8 @@ class AnnonceRepository {
                 e.id as exemplaire_id, e.etat, e.photoUrl,
                 o.id as ouvrage_id, o.titre, o.auteur, o.isbn,
                 c.id as categorie_id, c.label as categorie_label,
-                u.id as proprietaire_id, u.nom, u.filiere, u.etablissement, u.ville, u.nbEchanges, u.avatarUrl
+                u.id as proprietaire_id, u.nom, u.filiere, u.etablissement, u.ville, u.nbEchanges, u.avatarUrl,
+                (SELECT COUNT(*) FROM transactions t JOIN annonces a2 ON t.annonce_id = a2.id WHERE a2.exemplaire_id = e.id) as transaction_count
             FROM annonces a
             INNER JOIN exemplaires e ON a.exemplaire_id = e.id
             INNER JOIN ouvrages o ON e.ouvrage_id = o.id
@@ -185,6 +187,7 @@ class AnnonceRepository {
                 id: row.exemplaire_id,
                 etat: row.etat,
                 photoUrl: row.photoUrl,
+                transactionCount: row.transaction_count || 0,
                 ouvrage: {
                     id: row.ouvrage_id,
                     titre: row.titre,

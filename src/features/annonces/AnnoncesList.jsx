@@ -31,6 +31,7 @@ export default function AnnoncesList() {
                 return {
                     id: a.id,
                     exemplaireId: a.exemplaire?.id,
+                    transactionCount: a.exemplaire?.transactionCount || 0,
                     titre: ouvrage.titre || 'Sans titre',
                     auteur: ouvrage.auteur || 'Inconnu',
                     type: a.typeEchange || 'VENTE',
@@ -238,9 +239,18 @@ export default function AnnoncesList() {
                                 className={`${styles.iconAction} ${styles.historyBtn}`} 
                                 title="Historique"
                                 onClick={() => handleViewHistory(annonce.exemplaireId, annonce.titre)}
-                                style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}
+                                style={{ 
+                                    background: 'rgba(59, 130, 246, 0.1)', 
+                                    color: '#3b82f6',
+                                    position: 'relative' 
+                                }}
                             >
                                 <History size={16} />
+                                {annonce.transactionCount > 0 && (
+                                    <span className={styles.historyCountBadge}>
+                                        {annonce.transactionCount}
+                                    </span>
+                                )}
                             </button>
                         </div>
                     </motion.div>
@@ -340,7 +350,7 @@ export default function AnnoncesList() {
                     onClose={() => setHistoryInfo(null)}
                     title={`Historique de l'exemplaire : ${historyInfo.title}`}
                 >
-                    <div style={{ minWidth: '400px' }}>
+                    <div style={{ minWidth: '450px', maxHeight: '65vh', overflowY: 'auto', paddingRight: '10px' }}>
                         {isHistoryLoading ? (
                             <div style={{ padding: '2rem', textAlign: 'center' }}>Chargement de l'historique...</div>
                         ) : historyData.length === 0 ? (
