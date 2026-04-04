@@ -41,9 +41,13 @@ class ExemplaireController {
         try {
             const { id } = req.params;
             const userId = req.user.id;
+            
+            console.log(`[Controller] Starting update for id ${id} (Photo: ${!!req.file})`);
+
             const existing = await exemplaireRepository.findById(id);
             
             if (!existing || existing.proprietaire_id !== userId) {
+                console.log(`[Controller] Auth Reject: userId=${userId}, ownerId=${existing?.proprietaire_id}`);
                 return res.status(403).json({ error: 'Non autorisé' });
             }
 
@@ -52,9 +56,16 @@ class ExemplaireController {
                 data.photoUrl = `/uploads/${req.file.filename}`;
             }
 
+            console.log(`[Controller] Applying repo.update...`);
             await exemplaireRepository.update(id, data);
+            
             res.json({ message: 'Livre mis à jour' });
         } catch (error) {
+            console.error('CONTROLLER ERROR:', error);
+            // DIRECT LOG TO FILE SO WE CAN DEBUG NO MATTER WHAT
+            import('fs').then(fs => {
+                fs.appendFileSync('debug_log.txt', `[${new Date().toISOString()}] CONTROLLER ERROR ID ${req.params?.id}: ${error.message}\n${error.stack}\n`);
+            });
             res.status(500).json({ error: error.message });
         }
     }

@@ -43,6 +43,14 @@ app.get('/', (req, res) => {
     res.send('yTera Backend API is running...');
 });
 
+app.use((err, req, res, next) => {
+    console.error('GLOBAL ERROR HANDLER:', err);
+    import('fs').then(fs => {
+        fs.appendFileSync('debug_log.txt', `[${new Date().toISOString()}] GLOBAL ERROR: ${err.message}\n${err.stack}\n`);
+    });
+    res.status(500).json({ error: 'Erreur serveur interne', details: err.message });
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

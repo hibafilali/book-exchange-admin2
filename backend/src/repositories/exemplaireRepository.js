@@ -47,34 +47,62 @@ class ExemplaireRepository {
     async update(id, data) {
         const { etat, photoUrl, titre, auteur, isbn } = data;
         const connection = await pool.getConnection();
-        await connection.beginTransaction();
         
         try {
-            // 1. Update Exemplaire
-            await connection.query(
-                'UPDATE exemplaires SET etat = ?, photoUrl = ? WHERE id = ?',
-                [etat, photoUrl, id]
-            );
-
-            // 2. Fetch ouvrage_id
-            const [rows] = await connection.query('SELECT ouvrage_id FROM exemplaires WHERE id = ?', [id]);
-            const ouvrageId = rows[0]?.ouvrage_id;
-
-            if (ouvrageId && (titre || auteur || isbn)) {
-                // 3. Update Ouvrage
+            await connection.beginTransaction();
+            
+            const exemplarUpdates = [];
+            const exemplarParams = [];
+            
+            if (etat) {
+                exemplarUpdates.push('etat = ?');
+                exemplarParams.push(etat);
+            }
+            if (photoUrl) {
+                exemplarUpdates.push('photoUrl = ?');
+                exemplarParams.push(photoUrl);
+            }
+            
+            if (exemplarUpdates.length > 0) {
+                exemplarParams.push(id);
                 await connection.query(
-                    'UPDATE ouvrages SET titre = ?, auteur = ?, isbn = ? WHERE id = ?',
-                    [titre || '', auteur || '', isbn || '', ouvrageId]
+                    `UPDATE exemplaires SET ${exemplarUpdates.join(', ')} WHERE id = ?`, 
+                    exemplarParams
                 );
+            }
+
+            const [rows] = await connection.query('SELECT ouvrage_id FROM exemplaires WHERE id = ?', [id]);
+            if (rows.length === 0) throw new Error(`Exemplaire #${id} non trouvé dans la base`);
+            const ouvrageId = rows[0].ouvrage_id;
+
+            if (ouvrageId) {
+                const ouvrageUpdates = [];
+                const ouvrageParams = [];
+                
+                if (titre !== undefined && titre !== null) { ouvrageUpdates.push('titre = ?'); ouvrageParams.push(titre); }
+                if (auteur !== undefined && auteur !== null) { ouvrageUpdates.push('auteur = ?'); ouvrageParams.push(auteur); }
+                if (isbn !== undefined && isbn !== null) { ouvrageUpdates.push('isbn = ?'); ouvrageParams.push(isbn); }
+
+                if (ouvrageUpdates.length > 0) {
+                    ouvrageParams.push(ouvrageId);
+                    await connection.query(
+                        `UPDATE ouvrages SET ${ouvrageUpdates.join(', ')} WHERE id = ?`,
+                        ouvrageParams
+                    );
+                }
             }
 
             await connection.commit();
             return true;
         } catch (error) {
-            await connection.rollback();
+            if (connection) await connection.rollback();
+            // LOGGING TO A FILE SO WE CAN SEE IT
+            import('fs').then(fs => {
+                fs.appendFileSync('debug_log.txt', `[${new Date().toISOString()}] UPDATE ERROR ID ${id}: ${error.message}\n${error.stack}\n`);
+            });
             throw error;
         } finally {
-            connection.release();
+            if (connection) connection.release();
         }
     }
 

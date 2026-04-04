@@ -1,0 +1,36 @@
+[2026-04-04T13:14:53.377Z] GLOBAL ERROR: Images uniquement (jpg, jpeg, png, webp) !
+Error: Images uniquement (jpg, jpeg, png, webp) !
+    at fileFilter (file:///C:/Users/PC/Documents/book-exchange-admin-main/backend/src/middlewares/upload.js:40:12)
+    at wrappedFileFilter (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\multer\index.js:44:7)
+    at Multipart.<anonymous> (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\multer\lib\make-middleware.js:109:7)
+    at Multipart.emit (node:events:524:28)
+    at HeaderParser.cb (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:358:14)
+    at HeaderParser.push (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:162:20)
+    at SBMH.ssCb [as _cb] (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:394:37)
+    at feed (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\streamsearch\lib\sbmh.js:219:14)
+    at SBMH.push (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\streamsearch\lib\sbmh.js:104:16)
+    at Multipart._write (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:567:19)
+[2026-04-04T13:14:55.332Z] GLOBAL ERROR: Images uniquement (jpg, jpeg, png, webp) !
+Error: Images uniquement (jpg, jpeg, png, webp) !
+    at fileFilter (file:///C:/Users/PC/Documents/book-exchange-admin-main/backend/src/middlewares/upload.js:40:12)
+    at wrappedFileFilter (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\multer\index.js:44:7)
+    at Multipart.<anonymous> (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\multer\lib\make-middleware.js:109:7)
+    at Multipart.emit (node:events:524:28)
+    at HeaderParser.cb (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:358:14)
+    at HeaderParser.push (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:162:20)
+    at SBMH.ssCb [as _cb] (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:394:37)
+    at feed (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\streamsearch\lib\sbmh.js:219:14)
+    at SBMH.push (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\streamsearch\lib\sbmh.js:104:16)
+    at Multipart._write (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:567:19)
+[2026-04-04T13:15:11.254Z] GLOBAL ERROR: Images uniquement (jpg, jpeg, png, webp) !
+Error: Images uniquement (jpg, jpeg, png, webp) !
+    at fileFilter (file:///C:/Users/PC/Documents/book-exchange-admin-main/backend/src/middlewares/upload.js:40:12)
+    at wrappedFileFilter (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\multer\index.js:44:7)
+    at Multipart.<anonymous> (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\multer\lib\make-middleware.js:109:7)
+    at Multipart.emit (node:events:524:28)
+    at HeaderParser.cb (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:358:14)
+    at HeaderParser.push (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:162:20)
+    at SBMH.ssCb [as _cb] (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:394:37)
+    at feed (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\streamsearch\lib\sbmh.js:219:14)
+    at SBMH.push (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\streamsearch\lib\sbmh.js:104:16)
+    at Multipart._write (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:567:19)

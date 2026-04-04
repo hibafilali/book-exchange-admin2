@@ -16,9 +16,12 @@ class TransactionRepository {
         const [rows] = await pool.query(
             `SELECT t.*, 
             a.status as annonce_status,
+            o.titre as ouvrage_titre,
             u_buyer.nom as buyer_name, u_seller.nom as seller_name
             FROM transactions t
             JOIN annonces a ON t.annonce_id = a.id
+            JOIN exemplaires e ON a.exemplaire_id = e.id
+            JOIN ouvrages o ON e.ouvrage_id = o.id
             JOIN users u_buyer ON t.buyer_id = u_buyer.id
             JOIN users u_seller ON t.seller_id = u_seller.id
             WHERE t.id = ?`,
