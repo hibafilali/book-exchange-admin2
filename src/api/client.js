@@ -72,7 +72,8 @@ export const transactionApi = {
     accept: (id) => api.patch(`/transactions/${id}/accept`),
     schedule: (id, data) => api.patch(`/transactions/${id}/schedule`, data),
     complete: (id) => api.patch(`/transactions/${id}/complete`),
-    cancel: (id) => api.patch(`/transactions/${id}/cancel`)
+    cancel: (id) => api.patch(`/transactions/${id}/cancel`),
+    getAdminTransactions: () => api.get('/transactions/admin')
 };
 
 export default api;

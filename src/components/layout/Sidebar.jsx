@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen, ShieldAlert, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, ShieldAlert, Settings, LogOut, Repeat } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { useAuth } from '../../features/auth/useAuth';
 import YTeraLogo from '../common/YTeraLogo';
@@ -8,6 +8,7 @@ const NAV_ITEMS = [
     { path: '/admin', label: 'Tableau de bord', icon: LayoutDashboard },
     { path: '/admin/users', label: 'Utilisateurs', icon: Users },
     { path: '/admin/annonces', label: 'Annonces', icon: BookOpen },
+    { path: '/admin/transactions', label: 'Transactions', icon: Repeat },
     { path: '/admin/moderation', label: 'Modération', icon: ShieldAlert },
     { path: '/admin/settings', label: 'Paramètres', icon: Settings },
 ];

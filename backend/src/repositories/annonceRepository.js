@@ -15,6 +15,7 @@ class AnnonceRepository {
             LEFT JOIN annonces a ON e.id = a.exemplaire_id
             LEFT JOIN categories c ON o.categorie_id = c.id
             LEFT JOIN users u ON e.proprietaire_id = u.id
+            WHERE a.status = 'ACTIF' OR a.status IS NULL
             ORDER BY a.datePublication DESC, o.titre ASC
         `;
         const [rows] = await pool.query(query);

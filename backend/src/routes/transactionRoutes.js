@@ -15,4 +15,10 @@ router.patch('/:id/schedule', transactionController.schedule);
 router.patch('/:id/complete', transactionController.complete);
 router.patch('/:id/cancel', transactionController.cancel);
 
+// Admin routes
+router.get('/admin', (req, res, next) => {
+    if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Accès interdit.' });
+    next();
+}, transactionController.getAdminTransactions);
+
 export default router;

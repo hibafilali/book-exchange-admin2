@@ -121,6 +121,10 @@ class TransactionService {
 
         return true;
     }
+
+    async getAllTransactions() {
+        return await transactionRepository.findAll();
+    }
 }
 
 export default new TransactionService();

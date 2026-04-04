@@ -85,6 +85,15 @@ class TransactionController {
             res.status(400).json({ error: error.message });
         }
     }
+
+    async getAdminTransactions(req, res) {
+        try {
+            const transactions = await transactionService.getAllTransactions();
+            res.json(transactions);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 export default new TransactionController();

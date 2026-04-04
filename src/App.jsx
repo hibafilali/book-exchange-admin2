@@ -11,6 +11,7 @@ import UsersList from './features/users/UsersList';
 import AnnoncesList from './features/annonces/AnnoncesList';
 import Moderation from './features/moderation/Moderation';
 import Settings from './features/settings/Settings';
+import AdminTransactions from './features/transactions/AdminTransactions';
 import StudentLayout from './features/student/StudentLayout';
 import StudentHome from './features/student/StudentHome';
 import BookDetails from './features/student/BookDetails';
@@ -137,6 +138,7 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="users" element={<UsersList />} />
             <Route path="annonces" element={<AnnoncesList />} />
+            <Route path="transactions" element={<AdminTransactions />} />
             <Route path="moderation" element={<Moderation />} />
             <Route path="settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
