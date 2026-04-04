@@ -7,7 +7,7 @@ import {
     ChevronLeft, ChevronRight, MessageCircle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { bookApi, conversationApi } from '../../api/client';
+import { bookApi, conversationApi, transactionApi } from '../../api/client';
 import { TYPE_COLORS, ETAT_LABELS, ETAT_COLORS } from '../../data/mockBooks';
 import { useAuth } from '../auth/useAuth';
 import { getFullImageUrl } from '../../utils/imageHandler';
@@ -45,6 +45,9 @@ export default function BookDetails() {
     const [showContact, setShowContact] = useState(false);
     const [contactMsg, setContactMsg] = useState('');
     const [contactSent, setContactSent] = useState(false);
+    const [showCodModal, setShowCodModal] = useState(false);
+    const [codData, setCodData] = useState({ meeting_point: '', meeting_date: '' });
+    const [isCodLoading, setIsCodLoading] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -113,6 +116,34 @@ export default function BookDetails() {
         } catch (error) {
             console.error('Failed to send contact message:', error);
             toast.error('Erreur lors de l\'envoi du message');
+        }
+    };
+
+    const handleInitiateCod = async () => {
+        if (!codData.meeting_point || !codData.meeting_date) {
+            toast.error('Veuillez remplir tous les champs.');
+            return;
+        }
+
+        try {
+            setIsCodLoading(true);
+            await transactionApi.create({
+                annonce_id: book.id,
+                seller_id: book.exemplaire.proprietaire.id,
+                amount: book.prixVente,
+                meeting_point: codData.meeting_point,
+                meeting_date: codData.meeting_date
+            });
+
+            toast.success('Demande d\'achat envoyée !');
+            setShowCodModal(false);
+            // Redirect to dashboard to see the transaction
+            navigate('/student-dashboard/dashboard', { state: { activeTab: 'transactions' } });
+        } catch (error) {
+            console.error('Failed to initiate COD:', error);
+            toast.error(error.response?.data?.error || 'Erreur lors de la demande d\'achat');
+        } finally {
+            setIsCodLoading(false);
         }
     };
 
@@ -225,9 +256,16 @@ export default function BookDetails() {
                                 </div>
                             </div>
                         </div>
-                        <button className={styles.contactBtn} onClick={() => setShowContact(true)}>
-                            <MessageCircle size={18} /> Contacter l'annonceur
-                        </button>
+                        <div className={styles.ownerActions}>
+                            <button className={styles.contactBtn} onClick={() => setShowContact(true)}>
+                                <MessageCircle size={18} /> Message
+                            </button>
+                            {book.typeEchange === 'VENTE' && (
+                                <button className={styles.codBtn} onClick={() => setShowCodModal(true)}>
+                                    <ShieldCheck size={18} /> Acheter (Espèces)
+                                </button>
+                            )}
+                        </div>
                     </motion.div>
                 </div>
             </motion.div>
@@ -273,6 +311,38 @@ export default function BookDetails() {
                                 </button>
                             </>
                         )}
+                    </motion.div>
+                </div>
+            )}
+
+            {/* ====== COD MODAL ====== */}
+            {showCodModal && (
+                <div className={styles.modalOverlay} onClick={() => setShowCodModal(false)}>
+                    <motion.div className={styles.modalBox} onClick={e => e.stopPropagation()}
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ duration: 0.25 }}>
+                        <button className={styles.modalClose} onClick={() => setShowCodModal(false)}><X size={20} /></button>
+                        <div className={styles.modalIcon} style={{ background: 'var(--gradient-vente)' }}><ShieldCheck size={28} /></div>
+                        <h3>Proposer un achat</h3>
+                        <p>Vous allez proposer un achat en espèces de <strong>{book.prixVente} DH</strong> pour "{book.exemplaire?.ouvrage?.titre}".</p>
+
+                        <div className={styles.codForm}>
+                            <div className={styles.inputGroup}>
+                                <label className={styles.inputLabel}><MapPin size={14} /> Lieu de rencontre proposé</label>
+                                <input type="text" className={styles.modalInput} placeholder="Ex: Devant la bibliothèque centrale"
+                                    value={codData.meeting_point} onChange={e => setCodData({ ...codData, meeting_point: e.target.value })} />
+                            </div>
+                            <div className={styles.inputGroup}>
+                                <label className={styles.inputLabel}><eye size={14} /> Date & Heure souhaitées</label>
+                                <input type="datetime-local" className={styles.modalInput}
+                                    value={codData.meeting_date} onChange={e => setCodData({ ...codData, meeting_date: e.target.value })} />
+                            </div>
+                            <button className={styles.modalSend} onClick={handleInitiateCod} disabled={isCodLoading}>
+                                {isCodLoading ? 'Envoi...' : 'Envoyer la proposition'}
+                            </button>
+                            <p className={styles.disclaimer}>Le vendeur devra accepter votre proposition pour confirmer le rendez-vous.</p>
+                        </div>
                     </motion.div>
                 </div>
             )}

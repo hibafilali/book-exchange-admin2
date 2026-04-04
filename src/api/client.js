@@ -65,4 +65,14 @@ export const conversationApi = {
     startConversation: (recepteurId) => api.post('/conversations/start', { recepteurId })
 };
 
+export const transactionApi = {
+    create: (data) => api.post('/transactions', data),
+    getPurchases: () => api.get('/transactions/purchases'),
+    getSales: () => api.get('/transactions/sales'),
+    accept: (id) => api.patch(`/transactions/${id}/accept`),
+    schedule: (id, data) => api.patch(`/transactions/${id}/schedule`, data),
+    complete: (id) => api.patch(`/transactions/${id}/complete`),
+    cancel: (id) => api.patch(`/transactions/${id}/cancel`)
+};
+
 export default api;

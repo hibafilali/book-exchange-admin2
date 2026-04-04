@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { useFavorites } from '../../context/FavoritesContext';
-import { bookApi, dashboardApi } from '../../api/client';
+import { bookApi, dashboardApi, transactionApi } from '../../api/client';
 import ManualCard from './ManualCard';
 import styles from './StudentDashboard.module.css';
 
@@ -32,6 +32,8 @@ export default function StudentDashboard() {
     const [isLoading, setIsLoading] = useState(true);
     
     const [myAnnonces, setMyAnnonces] = useState([]);
+    const [myPurchases, setMyPurchases] = useState([]);
+    const [mySales, setMySales] = useState([]);
     const [activeFilter, setActiveFilter] = useState('Tous');
     
     // Profile Logic
@@ -44,14 +46,18 @@ export default function StudentDashboard() {
         const fetchDashboardData = async () => {
             try {
                 setIsLoading(true);
-                const [myBooksRes, allBooksRes, featuresRes] = await Promise.all([
+                const [myBooksRes, allBooksRes, featuresRes, purchasesRes, salesRes] = await Promise.all([
                     bookApi.getMy(),
                     bookApi.getAll(),
-                    dashboardApi.getStats(user?.id || 1)
+                    dashboardApi.getStats(user?.id || 1),
+                    transactionApi.getPurchases(),
+                    transactionApi.getSales()
                 ]);
                 setAllBooks(allBooksRes.data || []);
                 setDashboardFeatures(featuresRes.data);
                 setMyAnnonces(myBooksRes.data || []);
+                setMyPurchases(purchasesRes.data || []);
+                setMySales(salesRes.data || []);
             } catch (error) {
                 console.error('Failed to fetch data:', error);
             } finally {
@@ -86,6 +92,56 @@ export default function StudentDashboard() {
         if (tempName.trim()) {
             updateName(tempName.trim());
             setIsEditing(false);
+        }
+    };
+
+    const handleAcceptTransaction = async (id) => {
+        try {
+            await transactionApi.accept(id);
+            toast.success('Transaction acceptée !');
+            // Refresh
+            const salesRes = await transactionApi.getSales();
+            setMySales(salesRes.data);
+        } catch (error) {
+            toast.error('Erreur lors de l\'acceptation');
+        }
+    };
+
+    const handleCancelTransaction = async (id) => {
+        if (!window.confirm('Voulez-vous vraiment annuler cette transaction ?')) return;
+        try {
+            await transactionApi.cancel(id);
+            toast.success('Transaction annulée');
+            // Refresh
+            const [pRes, sRes] = await Promise.all([transactionApi.getPurchases(), transactionApi.getSales()]);
+            setMyPurchases(pRes.data);
+            setMySales(sRes.data);
+        } catch (error) {
+            toast.error('Erreur lors de l\'annulation');
+        }
+    };
+
+    const handleCompleteTransaction = async (id) => {
+        try {
+            await transactionApi.complete(id);
+            toast.success('Transaction marquée comme terminée !');
+            // Refresh
+            const [pRes, sRes] = await Promise.all([transactionApi.getPurchases(), transactionApi.getSales()]);
+            setMyPurchases(pRes.data);
+            setMySales(sRes.data);
+        } catch (error) {
+            toast.error('Erreur lors de la validation');
+        }
+    };
+
+    const getTransactionStatusLabel = (status) => {
+        switch (status) {
+            case 'PENDING': return { label: 'En attente', color: '#f59e0b' };
+            case 'ACCEPTED': return { label: 'Acceptée', color: '#3b82f6' };
+            case 'MEETING_SCHEDULED': return { label: 'Rendez-vous fixé', color: '#8b5cf6' };
+            case 'COMPLETED': return { label: 'Terminée', color: '#10b981' };
+            case 'CANCELLED': return { label: 'Annulée', color: '#ef4444' };
+            default: return { label: status, color: '#64748b' };
         }
     };
 
@@ -274,6 +330,92 @@ export default function StudentDashboard() {
                                         <p>Vous n'avez pas encore de favoris. Parcourez le catalogue pour en ajouter !</p>
                                     </div>
                                 )}
+                            </motion.div>
+
+                            {/* Mes Transactions COD */}
+                            <motion.div className={styles.panel} variants={itemVariants}>
+                                <div className={styles.panelHeader}>
+                                    <h2>Mes Transactions (COD)</h2>
+                                    <div className={styles.transactionLegend}>
+                                        <ShieldCheck size={16} /> 100% sécurisé par yTera
+                                    </div>
+                                </div>
+
+                                <div className={styles.transactionTabs}>
+                                    <div className={styles.transactionSubCol}>
+                                        <h3 className={styles.subColTitle}>Mes Achats</h3>
+                                        <div className={styles.transactionList}>
+                                            {myPurchases.length === 0 ? (
+                                                <p className={styles.emptyText}>Aucun achat en cours.</p>
+                                            ) : myPurchases.map(t => (
+                                                <div key={t.id} className={styles.transactionCard}>
+                                                    <div className={styles.tImage}>
+                                                        <img src={t.photoUrl?.startsWith('/uploads') ? `http://localhost:5000${t.photoUrl}` : t.photoUrl} alt="" />
+                                                    </div>
+                                                    <div className={styles.tInfo}>
+                                                        <h4>{t.ouvrage_titre}</h4>
+                                                        <div className={styles.tMeta}>
+                                                            <span className={styles.tStatus} style={{ color: getTransactionStatusLabel(t.status).color }}>
+                                                                {getTransactionStatusLabel(t.status).label}
+                                                            </span>
+                                                            <span className={styles.tPrice}>{t.amount} DH</span>
+                                                        </div>
+                                                        {t.status === 'MEETING_SCHEDULED' && (
+                                                            <div className={styles.meetingInfo}>
+                                                                <MapPin size={12} /> {t.meeting_point}
+                                                                <Calendar size={12} /> {new Date(t.meeting_date).toLocaleDateString()}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className={styles.tActions}>
+                                                        {t.status === 'ACCEPTED' || t.status === 'MEETING_SCHEDULED' ? (
+                                                            <button onClick={() => handleCompleteTransaction(t.id)} className={styles.btnTSuccess}>Terminer</button>
+                                                        ) : null}
+                                                        {t.status !== 'COMPLETED' && t.status !== 'CANCELLED' && (
+                                                            <button onClick={() => handleCancelTransaction(t.id)} className={styles.btnTCancel}>Annuler</button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.transactionSubCol}>
+                                        <h3 className={styles.subColTitle}>Mes Ventes</h3>
+                                        <div className={styles.transactionList}>
+                                            {mySales.length === 0 ? (
+                                                <p className={styles.emptyText}>Aucune vente en cours.</p>
+                                            ) : mySales.map(t => (
+                                                <div key={t.id} className={styles.transactionCard}>
+                                                    <div className={styles.tImage}>
+                                                        <img src={t.photoUrl?.startsWith('/uploads') ? `http://localhost:5000${t.photoUrl}` : t.photoUrl} alt="" />
+                                                    </div>
+                                                    <div className={styles.tInfo}>
+                                                        <h4>{t.ouvrage_titre}</h4>
+                                                        <p className={styles.buyerName}>Acheteur: {t.buyer_name}</p>
+                                                        <div className={styles.tMeta}>
+                                                            <span className={styles.tStatus} style={{ color: getTransactionStatusLabel(t.status).color }}>
+                                                                {getTransactionStatusLabel(t.status).label}
+                                                            </span>
+                                                            <span className={styles.tPrice}>{t.amount} DH</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className={styles.tActions}>
+                                                        {t.status === 'PENDING' && (
+                                                            <button onClick={() => handleAcceptTransaction(t.id)} className={styles.btnTPrimary}>Accepter</button>
+                                                        ) }
+                                                        {(t.status === 'ACCEPTED' || t.status === 'MEETING_SCHEDULED') && (
+                                                            <button onClick={() => handleCompleteTransaction(t.id)} className={styles.btnTSuccess}>Valider</button>
+                                                        )}
+                                                        {t.status !== 'COMPLETED' && t.status !== 'CANCELLED' && (
+                                                            <button onClick={() => handleCancelTransaction(t.id)} className={styles.btnTCancel}>Annuler</button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
                             </motion.div>
                         </div>
 

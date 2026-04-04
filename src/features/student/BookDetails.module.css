@@ -135,13 +135,43 @@
     font-size: 0.82rem; color: var(--text-secondary); font-weight: 500;
 }
 
+.ownerActions {
+    display: flex; gap: 0.5rem; width: 100%;
+}
+.contactBtn, .codBtn {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex: 1;
+    padding: 0.7rem; border-radius: 12px;
+    font-weight: 800; font-size: 0.85rem; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
 .contactBtn {
-    display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;
-    padding: 0.65rem; background: var(--accent-color); color: white; border-radius: 12px;
-    font-weight: 800; font-size: 0.88rem; transition: all 0.2s ease;
+    background: var(--bg-primary); color: var(--text-primary); border: 1.5px solid var(--border-color);
+}
+.contactBtn:hover { border-color: var(--accent-color); color: var(--accent-color); transform: translateY(-2px); }
+
+.codBtn {
+    background: var(--accent-color); color: white; border: none;
     box-shadow: 0 4px 15px var(--accent-glow);
 }
-.contactBtn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.codBtn:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 6px 20px var(--accent-glow); }
+
+/* ====== COD FORM ====== */
+.codForm { text-align: left; margin-top: 1rem; }
+.inputGroup { margin-bottom: 1.25rem; }
+.inputLabel {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.75rem; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.5rem;
+}
+.modalInput {
+    width: 100%; padding: 0.85rem 1rem; border-radius: 12px;
+    background: var(--bg-primary); border: 1.5px solid var(--border-color);
+    color: var(--text-primary); font-size: 0.9rem; transition: all 0.2s ease;
+}
+.modalInput:focus { border-color: var(--accent-color); outline: none; box-shadow: 0 0 0 4px var(--accent-glow); }
+.disclaimer {
+    font-size: 0.72rem !important; color: var(--text-muted) !important;
+    text-align: center; margin-top: 1rem !important; font-style: italic;
+}
 
 /* ====== SIMILAR ====== */
 .similarSection { margin-top: 1.5rem; }
