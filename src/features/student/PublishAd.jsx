@@ -10,6 +10,7 @@ import { toast } from 'react-hot-toast';
 import ManualCard from './ManualCard';
 import styles from './PublishAd.module.css';
 import { bookApi, exemplaireApi } from '../../api/client';
+import { getFullImageUrl } from '../../utils/imageHandler';
 import { useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 
@@ -417,7 +418,7 @@ export default function PublishAd() {
                                                         <div key={book.id} className={`${styles.libCard} ${formData.exemplaireId === book.id ? styles.libCardActive : ''}`}
                                                              onClick={() => handleSelectFromLibrary(book.id)}>
                                                             <div className={styles.libCardImg}>
-                                                                <img src={book.photoUrl || '/uploads/default-book.png'} alt={book.titre} />
+                                                                <img src={getFullImageUrl(book.photoUrl)} alt={book.titre} />
                                                             </div>
                                                             <div className={styles.libCardInfo}>
                                                                 <h4>{book.titre}</h4>

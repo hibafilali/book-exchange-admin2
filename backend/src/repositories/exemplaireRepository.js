@@ -3,7 +3,8 @@ import pool from '../config/db.js';
 class ExemplaireRepository {
     async findByUserId(userId) {
         const query = `
-            SELECT e.*, o.titre, o.auteur, o.isbn, c.label as categorie_label
+            SELECT e.*, o.titre, o.auteur, o.isbn, c.label as categorie_label,
+                   (SELECT status FROM annonces WHERE exemplaire_id = e.id AND status IN ('ACTIF', 'ATTENTE', 'EN_TRANSACTION') LIMIT 1) as ad_status
             FROM exemplaires e
             JOIN ouvrages o ON e.ouvrage_id = o.id
             LEFT JOIN categories c ON o.categorie_id = c.id

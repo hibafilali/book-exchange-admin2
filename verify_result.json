@@ -1,0 +1,177 @@
+[
+  {
+    "id": 181,
+    "titre": "book",
+    "proprietaire_id": 22,
+    "ad_id": 181,
+    "status": "ATTENTE"
+  },
+  {
+    "id": 176,
+    "titre": "Debug Book",
+    "proprietaire_id": 22,
+    "ad_id": null,
+    "status": null
+  },
+  {
+    "id": 172,
+    "titre": "Gray's Anatomy: The Anatomical Basis of Clinical Practice",
+    "proprietaire_id": 22,
+    "ad_id": null,
+    "status": null
+  },
+  {
+    "id": 173,
+    "titre": "Harrison's Principles of Internal Medicine",
+    "proprietaire_id": 22,
+    "ad_id": null,
+    "status": null
+  },
+  {
+    "id": 180,
+    "titre": "holabook",
+    "proprietaire_id": 22,
+    "ad_id": 180,
+    "status": "ATTENTE"
+  },
+  {
+    "id": 175,
+    "titre": "manuel ",
+    "proprietaire_id": 22,
+    "ad_id": null,
+    "status": null
+  },
+  {
+    "id": 183,
+    "titre": "NEW2",
+    "proprietaire_id": 22,
+    "ad_id": 183,
+    "status": "VENDU"
+  },
+  {
+    "id": 179,
+    "titre": "ouvrage",
+    "proprietaire_id": 22,
+    "ad_id": 179,
+    "status": "ACTIF"
+  },
+  {
+    "id": 182,
+    "titre": "PUBLICATION",
+    "proprietaire_id": 22,
+    "ad_id": 182,
+    "status": "VENDU"
+  },
+  {
+    "id": 171,
+    "titre": "Test Driven Development: By Example",
+    "proprietaire_id": 22,
+    "ad_id": null,
+    "status": null
+  },
+  {
+    "id": 174,
+    "titre": "test_livre",
+    "proprietaire_id": 22,
+    "ad_id": null,
+    "status": null
+  },
+  {
+    "id": 177,
+    "titre": "titre",
+    "proprietaire_id": 22,
+    "ad_id": null,
+    "status": null
+  },
+  {
+    "id": 178,
+    "titre": "titre_test",
+    "proprietaire_id": 22,
+    "ad_id": 178,
+    "status": "ACTIF"
+  },
+  {
+    "id": 155,
+    "titre": "Le Capital au XXIe siècle",
+    "proprietaire_id": 23,
+    "ad_id": 155,
+    "status": "ACTIF"
+  },
+  {
+    "id": 148,
+    "titre": "Marketing Management",
+    "proprietaire_id": 23,
+    "ad_id": 148,
+    "status": "ACTIF"
+  },
+  {
+    "id": 129,
+    "titre": "System Design Interview",
+    "proprietaire_id": 23,
+    "ad_id": 129,
+    "status": "ACTIF"
+  },
+  {
+    "id": 152,
+    "titre": "Calcul Différentiel et Intégral",
+    "proprietaire_id": 24,
+    "ad_id": 152,
+    "status": "ACTIF"
+  },
+  {
+    "id": 133,
+    "titre": "Introduction to Algorithms",
+    "proprietaire_id": 24,
+    "ad_id": 133,
+    "status": "ACTIF"
+  },
+  {
+    "id": 150,
+    "titre": "Physique de Feynman",
+    "proprietaire_id": 24,
+    "ad_id": 150,
+    "status": "ACTIF"
+  },
+  {
+    "id": 166,
+    "titre": "Principles of Economics",
+    "proprietaire_id": 24,
+    "ad_id": 166,
+    "status": "ATTENTE"
+  },
+  {
+    "id": 158,
+    "titre": "L’Étranger",
+    "proprietaire_id": 25,
+    "ad_id": 158,
+    "status": "ATTENTE"
+  },
+  {
+    "id": 168,
+    "titre": "Clean Code: A Handbook of Agile Software Craftsmanship",
+    "proprietaire_id": 26,
+    "ad_id": 168,
+    "status": "ACTIF"
+  },
+  {
+    "id": 169,
+    "titre": "Design Patterns: Elements of Reusable Object-Oriented Software",
+    "proprietaire_id": 26,
+    "ad_id": 169,
+    "status": "EN_TRANSACTION"
+  },
+  {
+    "id": 170,
+    "titre": "Refactoring: Improving the Design of Existing Code",
+    "proprietaire_id": 26,
+    "ad_id": 170,
+    "status": "EN_TRANSACTION"
+  },
+  {
+    "id": 184,
+    "titre": "Titre inconnu",
+    "proprietaire_id": 27,
+    "ad_id": 184,
+    "status": "VENDU"
+  }
+]

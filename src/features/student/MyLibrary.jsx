@@ -4,7 +4,8 @@ import {
     Book, Trash2, Plus, Search, Filter, 
     MoreHorizontal, BookOpen, Clock, 
     CheckCircle, AlertCircle, Edit2, 
-    ArrowRightCircle, Library, History, X
+    ArrowRightCircle, Library, History, X,
+    Camera, Upload
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { exemplaireApi } from '../../api/client';
@@ -27,6 +28,8 @@ export default function MyLibrary() {
     const [editTitre, setEditTitre] = useState('');
     const [editAuteur, setEditAuteur] = useState('');
     const [editIsbn, setEditIsbn] = useState('');
+    const [editPhoto, setEditPhoto] = useState(null);
+    const [photoPreview, setPhotoPreview] = useState(null);
     const [isUpdating, setIsUpdating] = useState(false);
 
     const navigate = useNavigate();
@@ -53,20 +56,36 @@ export default function MyLibrary() {
         setEditTitre(book.titre);
         setEditAuteur(book.auteur || '');
         setEditIsbn(book.isbn || '');
+        setEditPhoto(null);
+        setPhotoPreview(getFullImageUrl(book.photoUrl));
         setIsEditModalOpen(true);
+    };
+    
+    const handlePhotoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setEditPhoto(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setPhotoPreview(reader.result);
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleUpdate = async () => {
         if (!selectedBook) return;
         try {
             setIsUpdating(true);
-            await exemplaireApi.update(selectedBook.id, { 
-                etat: editEtat,
-                photoUrl: selectedBook.photoUrl,
-                titre: editTitre,
-                auteur: editAuteur,
-                isbn: editIsbn
-            });
+            
+            const formData = new FormData();
+            formData.append('etat', editEtat);
+            formData.append('titre', editTitre);
+            formData.append('auteur', editAuteur);
+            formData.append('isbn', editIsbn);
+            if (editPhoto) {
+                formData.append('photo', editPhoto);
+            }
+
+            await exemplaireApi.update(selectedBook.id, formData);
             toast.success('Livre mis à jour');
             setIsEditModalOpen(false);
             fetchLibrary();
@@ -92,6 +111,16 @@ export default function MyLibrary() {
         b.titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         b.auteur?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const renderAdBadge = (status) => {
+        if (!status) return null;
+        const labels = {
+            'ACTIF': 'En Vente',
+            'ATTENTE': 'En Attente',
+            'EN_TRANSACTION': 'Réservé'
+        };
+        return <div className={styles.adBadge} data-status={status}>{labels[status]}</div>;
+    };
 
     return (
         <div className={styles.container}>
@@ -174,6 +203,7 @@ export default function MyLibrary() {
                         >
                             <div className={styles.cardImage}>
                                 <img src={getFullImageUrl(book.photoUrl)} alt={book.titre} />
+                                {renderAdBadge(book.ad_status)}
                                 <div className={styles.badgeEtat} data-etat={book.etat}>{book.etat}</div>
                             </div>
                             <div className={styles.cardContent}>
@@ -196,11 +226,12 @@ export default function MyLibrary() {
 
                                 <div className={styles.cardActions}>
                                     <button 
-                                        className={styles.btnPublish}
-                                        onClick={() => navigate('/student-dashboard/publish', { state: { exemplaireId: book.id } })}
+                                        className={`${styles.btnPublish} ${book.ad_status ? styles.btnDisabled : ''}`}
+                                        onClick={() => !book.ad_status && navigate('/student-dashboard/publish', { state: { exemplaireId: book.id } })}
+                                        disabled={!!book.ad_status}
                                     >
                                         <ArrowRightCircle size={16} />
-                                        Annoncer
+                                        {book.ad_status ? 'Déjà publié' : 'Annoncer'}
                                     </button>
                                     <div className={styles.iconActions}>
                                         <button 
@@ -240,6 +271,17 @@ export default function MyLibrary() {
                                 <button onClick={() => setIsEditModalOpen(false)} className={styles.btnClose}><X /></button>
                             </div>
                             <div className={styles.modalBody}>
+                                <div className={styles.photoUploadSection}>
+                                    <div className={styles.photoPreviewWrap}>
+                                        <img src={photoPreview} alt="Preview" />
+                                        <label className={styles.photoLabel}>
+                                            <Camera size={20} />
+                                            <input type="file" hidden onChange={handlePhotoChange} accept="image/*" />
+                                        </label>
+                                    </div>
+                                    <p className={styles.photoTip}>Changer la photo de couverture</p>
+                                </div>
+
                                 <div className={styles.editSection}>
                                     <label>Titre de l'ouvrage</label>
                                     <input 

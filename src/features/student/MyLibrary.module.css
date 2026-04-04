@@ -262,9 +262,48 @@
     border-color: #ffab91;
 }
 
+.btnDisabled {
+    opacity: 0.6;
+    cursor: not-allowed !important;
+    background: #f1f5f9 !important;
+    color: #94a3b8 !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: none !important;
+}
+
 .iconActions {
     display: flex;
     gap: 0.5rem;
+}
+
+.adBadge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    backdrop-filter: blur(8px);
+    z-index: 2;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.adBadge[data-status='ACTIF'] {
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
+}
+
+.adBadge[data-status='ATTENTE'] {
+    background: rgba(245, 158, 11, 0.9);
+    color: white;
+}
+
+.adBadge[data-status='EN_TRANSACTION'] {
+    background: rgba(139, 92, 246, 0.9);
+    color: white;
 }
 
 .iconBtn, .iconBtnDanger {
@@ -398,6 +437,58 @@
 
 .modalBody {
     padding: 2rem;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.photoUploadSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.photoPreviewWrap {
+    position: relative;
+    width: 120px;
+    height: 160px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #f1f5f9;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.photoPreviewWrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photoLabel {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    top: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    opacity: 0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.photoPreviewWrap:hover .photoLabel {
+    opacity: 1;
+}
+
+.photoTip {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 0.75rem;
+    font-weight: 600;
 }
 
 .modalSub {

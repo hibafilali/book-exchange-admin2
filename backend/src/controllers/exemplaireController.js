@@ -47,7 +47,12 @@ class ExemplaireController {
                 return res.status(403).json({ error: 'Non autorisé' });
             }
 
-            await exemplaireRepository.update(id, req.body);
+            const data = { ...req.body };
+            if (req.file) {
+                data.photoUrl = `/uploads/${req.file.filename}`;
+            }
+
+            await exemplaireRepository.update(id, data);
             res.json({ message: 'Livre mis à jour' });
         } catch (error) {
             res.status(500).json({ error: error.message });
