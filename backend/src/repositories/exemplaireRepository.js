@@ -44,12 +44,37 @@ class ExemplaireRepository {
     }
 
     async update(id, data) {
-        const { etat, photoUrl } = data;
-        await pool.query(
-            'UPDATE exemplaires SET etat = ?, photoUrl = ? WHERE id = ?',
-            [etat, photoUrl, id]
-        );
-        return true;
+        const { etat, photoUrl, titre, auteur, isbn } = data;
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            // 1. Update Exemplaire
+            await connection.query(
+                'UPDATE exemplaires SET etat = ?, photoUrl = ? WHERE id = ?',
+                [etat, photoUrl, id]
+            );
+
+            // 2. Fetch ouvrage_id
+            const [rows] = await connection.query('SELECT ouvrage_id FROM exemplaires WHERE id = ?', [id]);
+            const ouvrageId = rows[0]?.ouvrage_id;
+
+            if (ouvrageId && (titre || auteur || isbn)) {
+                // 3. Update Ouvrage
+                await connection.query(
+                    'UPDATE ouvrages SET titre = ?, auteur = ?, isbn = ? WHERE id = ?',
+                    [titre || '', auteur || '', isbn || '', ouvrageId]
+                );
+            }
+
+            await connection.commit();
+            return true;
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
     }
 
     async delete(id) {

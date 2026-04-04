@@ -1,20 +1,34 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Book, Trash2, Plus, Search, Filter, 
     MoreHorizontal, BookOpen, Clock, 
     CheckCircle, AlertCircle, Edit2, 
-    ArrowRightCircle, Library, History
+    ArrowRightCircle, Library, History, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { exemplaireApi } from '../../api/client';
+import { getFullImageUrl } from '../../utils/imageHandler';
 import toast from 'react-hot-toast';
 import styles from './MyLibrary.module.css';
+
+const ETATS = ['NEUF', 'BON', 'ACCEPTABLE', 'USE'];
+const ETAT_LABELS = { NEUF: 'Neuf', BON: 'Bon état', ACCEPTABLE: 'Acceptable', USE: 'Usé' };
 
 export default function MyLibrary() {
     const [books, setBooks] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    
+    // Edit Modal State
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedBook, setSelectedBook] = useState(null);
+    const [editEtat, setEditEtat] = useState('BON');
+    const [editTitre, setEditTitre] = useState('');
+    const [editAuteur, setEditAuteur] = useState('');
+    const [editIsbn, setEditIsbn] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -30,6 +44,36 @@ export default function MyLibrary() {
             toast.error('Erreur lors du chargement de la bibliothèque');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleEditClick = (book) => {
+        setSelectedBook(book);
+        setEditEtat(book.etat);
+        setEditTitre(book.titre);
+        setEditAuteur(book.auteur || '');
+        setEditIsbn(book.isbn || '');
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdate = async () => {
+        if (!selectedBook) return;
+        try {
+            setIsUpdating(true);
+            await exemplaireApi.update(selectedBook.id, { 
+                etat: editEtat,
+                photoUrl: selectedBook.photoUrl,
+                titre: editTitre,
+                auteur: editAuteur,
+                isbn: editIsbn
+            });
+            toast.success('Livre mis à jour');
+            setIsEditModalOpen(false);
+            fetchLibrary();
+        } catch (error) {
+            toast.error('Erreur lors de la mise à jour');
+        } finally {
+            setIsUpdating(false);
         }
     };
 
@@ -129,7 +173,7 @@ export default function MyLibrary() {
                             whileHover={{ y: -5 }}
                         >
                             <div className={styles.cardImage}>
-                                <img src={book.photoUrl || '/uploads/default-book.png'} alt={book.titre} />
+                                <img src={getFullImageUrl(book.photoUrl)} alt={book.titre} />
                                 <div className={styles.badgeEtat} data-etat={book.etat}>{book.etat}</div>
                             </div>
                             <div className={styles.cardContent}>
@@ -159,7 +203,13 @@ export default function MyLibrary() {
                                         Annoncer
                                     </button>
                                     <div className={styles.iconActions}>
-                                        <button className={styles.iconBtn} title="Modifier"><Edit2 size={16}/></button>
+                                        <button 
+                                            className={styles.iconBtn} 
+                                            title="Modifier"
+                                            onClick={() => handleEditClick(book)}
+                                        >
+                                            <Edit2 size={16}/>
+                                        </button>
                                         <button 
                                             className={styles.iconBtnDanger} 
                                             title="Supprimer"
@@ -174,6 +224,84 @@ export default function MyLibrary() {
                     ))}
                 </div>
             )}
+
+            {/* Edit Modal */}
+            <AnimatePresence>
+                {isEditModalOpen && (
+                    <div className={styles.modalOverlay}>
+                        <motion.div 
+                            className={styles.modal}
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        >
+                            <div className={styles.modalHeader}>
+                                <h2>Modifier l'ouvrage</h2>
+                                <button onClick={() => setIsEditModalOpen(false)} className={styles.btnClose}><X /></button>
+                            </div>
+                            <div className={styles.modalBody}>
+                                <div className={styles.editSection}>
+                                    <label>Titre de l'ouvrage</label>
+                                    <input 
+                                        type="text" 
+                                        className={styles.modalInput}
+                                        value={editTitre}
+                                        onChange={(e) => setEditTitre(e.target.value)}
+                                        placeholder="Titre complet"
+                                    />
+                                </div>
+
+                                <div className={styles.editSection}>
+                                    <label>Auteur(s)</label>
+                                    <input 
+                                        type="text" 
+                                        className={styles.modalInput}
+                                        value={editAuteur}
+                                        onChange={(e) => setEditAuteur(e.target.value)}
+                                        placeholder="Nom de l'auteur"
+                                    />
+                                </div>
+
+                                <div className={styles.editSection}>
+                                    <label>ISBN</label>
+                                    <input 
+                                        type="text" 
+                                        className={styles.modalInput}
+                                        value={editIsbn}
+                                        onChange={(e) => setEditIsbn(e.target.value)}
+                                        placeholder="Ex: 978-..."
+                                    />
+                                </div>
+
+                                <div className={styles.editSection}>
+                                    <label>État de l'exemplaire</label>
+                                    <div className={styles.etatGrid}>
+                                        {ETATS.map(e => (
+                                            <button 
+                                                key={e}
+                                                className={`${styles.etatBtn} ${editEtat === e ? styles.etatBtnActive : ''}`}
+                                                onClick={() => setEditEtat(e)}
+                                            >
+                                                {ETAT_LABELS[e]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className={styles.modalFooter}>
+                                <button className={styles.btnCancel} onClick={() => setIsEditModalOpen(false)}>Annuler</button>
+                                <button 
+                                    className={styles.btnSave} 
+                                    onClick={handleUpdate}
+                                    disabled={isUpdating}
+                                >
+                                    {isUpdating ? 'Mise à jour...' : 'Enregistrer'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

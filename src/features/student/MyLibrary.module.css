@@ -340,3 +340,164 @@
     border: none;
     cursor: pointer;
 }
+
+/* Modal */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1.5rem;
+}
+
+.modal {
+    background: white;
+    width: 100%;
+    max-width: 500px;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+    overflow: hidden;
+}
+
+.modalHeader {
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.modalHeader h2 {
+    font-size: 1.25rem;
+    font-weight: 850;
+    color: #0f172a;
+    margin: 0;
+}
+
+.btnClose {
+    background: #f8fafc;
+    border: none;
+    color: #64748b;
+    padding: 0.5rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btnClose:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.modalBody {
+    padding: 2rem;
+}
+
+.modalSub {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+}
+
+.editSection label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 750;
+    color: #334155;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.modalInput {
+    width: 100%;
+    padding: 0.875rem 1.25rem;
+    border-radius: 14px;
+    border: 2px solid #f1f5f9;
+    background: #f8fafc;
+    font-size: 0.95rem;
+    color: #0f172a;
+    transition: all 0.2s;
+    margin-bottom: 0.5rem;
+}
+
+.modalInput:focus {
+    outline: none;
+    border-color: #ff5722;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(255, 87, 34, 0.1);
+}
+
+.etatGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.etatBtn {
+    padding: 0.75rem;
+    border-radius: 12px;
+    border: 2px solid #f1f5f9;
+    background: white;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.etatBtn:hover {
+    border-color: #e2e8f0;
+    color: #334155;
+}
+
+.etatBtnActive {
+    border-color: #ff5722;
+    background: #fff5f2;
+    color: #ff5722;
+}
+
+.modalFooter {
+    padding: 1.5rem 2rem;
+    background: #f8fafc;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.btnCancel {
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.btnSave {
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    border: none;
+    background: #0f172a;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btnSave:hover {
+    background: #1e293b;
+    transform: translateY(-1px);
+}
+
+.btnSave:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
