@@ -9,7 +9,9 @@ import {
 import { toast } from 'react-hot-toast';
 import ManualCard from './ManualCard';
 import styles from './PublishAd.module.css';
-import { bookApi } from '../../api/client';
+import { bookApi, exemplaireApi } from '../../api/client';
+import { useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 
 const STEPS = [
     { id: 1, title: 'Le Manuel', icon: BookOpen },
@@ -33,17 +35,67 @@ export default function PublishAd() {
     const [isPublishing, setIsPublishing] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [isbnLoading, setIsbnLoading] = useState(false);
+    const [libraryLoading, setLibraryLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
+    const [publishMode, setPublishMode] = useState('MANUAL'); // 'MANUAL' or 'LIBRARY'
+    const [myAvailableBooks, setMyAvailableBooks] = useState([]);
 
     // Form State mapped to SQL Tables mentally
     const [formData, setFormData] = useState({
         // T_MANUEL
         isbn: '', titre: '', auteur: '', filiere: '', niveau: '',
         // T_EXEMPLAIRE
+        exemplaireId: null,
         etat: 'BON', photos: [], ville: '',
         // T_ANNONCE
         typeEchange: 'VENTE', prixVente: '', dureePret: '', caution: '', description: ''
     });
+
+    useEffect(() => {
+        if (location.state?.exemplaireId) {
+            handleSelectFromLibrary(location.state.exemplaireId);
+        }
+    }, [location.state]);
+
+    const fetchAvailableBooks = async () => {
+        setLibraryLoading(true);
+        try {
+            const { data } = await exemplaireApi.getAvailable();
+            setMyAvailableBooks(data);
+        } catch (error) {
+            toast.error('Erreur lors du chargement de votre bibliothèque');
+        } finally {
+            setLibraryLoading(false);
+        }
+    };
+
+    const handleSelectFromLibrary = async (exemplaireId) => {
+        try {
+            setLibraryLoading(true);
+            const { data } = await exemplaireApi.getMyLibrary(); 
+            const book = data.find(b => b.id === exemplaireId);
+            if (book) {
+                setFormData(prev => ({
+                    ...prev,
+                    exemplaireId: book.id,
+                    isbn: book.isbn || '',
+                    titre: book.titre,
+                    auteur: book.auteur,
+                    filiere: book.filiere || 'Informatique',
+                    etat: book.etat,
+                    photos: [{ id: 'existing', url: book.photoUrl, existing: true }],
+                    ville: book.ville || ''
+                }));
+                setPublishMode('LIBRARY');
+                setStep(3); // Jump to Ad details
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error('Erreur lors de la sélection du livre');
+        } finally {
+            setLibraryLoading(false);
+        }
+    };
 
     const updateForm = (key, val) => {
         setFormData(prev => ({ ...prev, [key]: val }));
@@ -94,23 +146,30 @@ export default function PublishAd() {
             const data = new FormData();
             
             // Basic fields
-            data.append('isbn', formData.isbn);
-            data.append('titre', formData.titre);
-            data.append('auteur', formData.auteur);
-            data.append('filiere', formData.filiere);
-            data.append('niveau', formData.niveau);
-            data.append('etat', formData.etat);
-            data.append('ville', formData.ville);
+            if (formData.exemplaireId) {
+                data.append('exemplaireId', formData.exemplaireId);
+            } else {
+                data.append('isbn', formData.isbn);
+                data.append('titre', formData.titre);
+                data.append('auteur', formData.auteur);
+                data.append('filiere', formData.filiere);
+                data.append('niveau', formData.niveau);
+                data.append('etat', formData.etat);
+                data.append('ville', formData.ville);
+            }
+            
             data.append('typeEchange', formData.typeEchange);
             data.append('prixVente', formData.prixVente || 0);
             data.append('dureePret', formData.dureePret || '');
             data.append('caution', formData.caution || 0);
             data.append('description', formData.description || '');
             
-            // Multple photos
-            formData.photos.forEach(p => {
-                data.append('photos', p.file);
-            });
+            // Multiple photos (only if manual)
+            if (!formData.exemplaireId) {
+                formData.photos.forEach(p => {
+                    data.append('photos', p.file);
+                });
+            }
 
             console.log('--- FORM DATA PREPARED FOR UPLOAD ---');
             for (let [key, value] of data.entries()) {
@@ -169,10 +228,19 @@ export default function PublishAd() {
     };
 
     const nextStep = () => {
-        if (step === 1 && !validateStep1()) return;
+        if (step === 1 && publishMode === 'MANUAL' && !validateStep1()) return;
+        if (step === 1 && publishMode === 'LIBRARY' && !formData.exemplaireId) {
+            setErrorMsg("Veuillez sélectionner un livre de votre bibliothèque.");
+            return;
+        }
         if (step === 2 && !validateStep2()) return;
+
+        if (step === 1 && publishMode === 'LIBRARY') {
+            setStep(3); // Skip step 2 if from library
+        } else {
+            setStep(p => Math.min(3, p + 1));
+        }
         setErrorMsg('');
-        setStep(p => Math.min(3, p + 1));
     };
 
     const prevStep = () => {
@@ -265,53 +333,103 @@ export default function PublishAd() {
                             {/* ——— ÉTAPE 1: LE MANUEL ——— */}
                             {step === 1 && (
                                 <div className={styles.formSection}>
-                                    <h2 className={styles.sectionTitle}>Données du Manuel</h2>
-                                    
-                                    <div className={styles.isbnBox}>
-                                        <label className={styles.miniLabel}>Entrer l'ISBN</label>
-                                        <div className={styles.isbnInputWrap}>
-                                            <input type="text" placeholder="Ex: 978-0262033848" 
-                                                value={formData.isbn} onChange={e => updateForm('isbn', e.target.value)}
-                                                className={styles.input} />
-                                            <button className={styles.isbnBtn} onClick={handleIsbnSearch} disabled={isbnLoading || !formData.isbn}>
-                                                {isbnLoading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />} Vérifier
-                                            </button>
-                                        </div>
+                                    <div className={styles.modeToggle}>
+                                        <button 
+                                            className={`${styles.modeBtn} ${publishMode === 'MANUAL' ? styles.modeBtnActive : ''}`}
+                                            onClick={() => setPublishMode('MANUAL')}
+                                        >
+                                            Numériser un nouveau livre
+                                        </button>
+                                        <button 
+                                            className={`${styles.modeBtn} ${publishMode === 'LIBRARY' ? styles.modeBtnActive : ''}`}
+                                            onClick={() => {
+                                                setPublishMode('LIBRARY');
+                                                fetchAvailableBooks();
+                                            }}
+                                        >
+                                            Choisir de ma bibliothèque
+                                        </button>
                                     </div>
 
-                                    <div className={styles.inputGroup}>
-                                        <label>Titre de l'ouvrage *</label>
-                                        <input type="text" className={styles.input} placeholder="Titre complet" 
-                                            value={formData.titre} onChange={e => updateForm('titre', e.target.value)} />
-                                    </div>
+                                    {publishMode === 'MANUAL' ? (
+                                        <>
+                                            <h2 className={styles.sectionTitle}>Données du Manuel</h2>
+                                            <div className={styles.isbnBox}>
+                                                <label className={styles.miniLabel}>Entrer l'ISBN</label>
+                                                <div className={styles.isbnInputWrap}>
+                                                    <input type="text" placeholder="Ex: 978-0262033848" 
+                                                        value={formData.isbn} onChange={e => updateForm('isbn', e.target.value)}
+                                                        className={styles.input} />
+                                                    <button className={styles.isbnBtn} onClick={handleIsbnSearch} disabled={isbnLoading || !formData.isbn}>
+                                                        {isbnLoading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />} Vérifier
+                                                    </button>
+                                                </div>
+                                            </div>
 
-                                    <div className={styles.grid2}>
-                                        <div className={styles.inputGroup}>
-                                            <label>Auteur(s) *</label>
-                                            <input type="text" className={styles.input} placeholder="Nom de l'auteur"
-                                                value={formData.auteur} onChange={e => updateForm('auteur', e.target.value)} />
+                                            <div className={styles.inputGroup}>
+                                                <label>Titre de l'ouvrage *</label>
+                                                <input type="text" className={styles.input} placeholder="Titre complet" 
+                                                    value={formData.titre} onChange={e => updateForm('titre', e.target.value)} />
+                                            </div>
+
+                                            <div className={styles.grid2}>
+                                                <div className={styles.inputGroup}>
+                                                    <label>Auteur(s) *</label>
+                                                    <input type="text" className={styles.input} placeholder="Nom de l'auteur"
+                                                        value={formData.auteur} onChange={e => updateForm('auteur', e.target.value)} />
+                                                </div>
+                                                <div className={styles.inputGroup}>
+                                                    <label>Filière *</label>
+                                                    <select className={styles.select} value={formData.filiere} onChange={e => updateForm('filiere', e.target.value)}>
+                                                        <option value="">Sélectionner...</option>
+                                                        <option value="Informatique">Informatique</option>
+                                                        <option value="Droit">Droit</option>
+                                                        <option value="Économie">Économie</option>
+                                                        <option value="Médecine">Médecine</option>
+                                                    </select>
+                                                </div>
+                                                <div className={styles.inputGroup}>
+                                                    <label>Niveau d'études *</label>
+                                                    <select className={styles.select} value={formData.niveau} onChange={e => updateForm('niveau', e.target.value)}>
+                                                        <option value="">Sélectionner...</option>
+                                                        <option value="L1">L1 / 1ère année</option>
+                                                        <option value="L2">L2 / 2ème année</option>
+                                                        <option value="L3">L3 / 3ème année</option>
+                                                        <option value="Master">Master</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className={styles.librarySelection}>
+                                            <h2 className={styles.sectionTitle}>Ma Bibliothèque</h2>
+                                            {libraryLoading ? (
+                                                <div className={styles.libLoading}><Loader2 className="animate-spin" /> Chargement...</div>
+                                            ) : myAvailableBooks.length === 0 ? (
+                                                <div className={styles.libEmpty}>
+                                                    <AlertCircle size={32} />
+                                                    <p>Aucun livre disponible dans votre bibliothèque (ou ils sont déjà en cours d'annonce).</p>
+                                                    <button className={styles.btnLink} onClick={() => setPublishMode('MANUAL')}>Numériser manuellement</button>
+                                                </div>
+                                            ) : (
+                                                <div className={styles.libGrid}>
+                                                    {myAvailableBooks.map(book => (
+                                                        <div key={book.id} className={`${styles.libCard} ${formData.exemplaireId === book.id ? styles.libCardActive : ''}`}
+                                                             onClick={() => handleSelectFromLibrary(book.id)}>
+                                                            <div className={styles.libCardImg}>
+                                                                <img src={book.photoUrl || '/uploads/default-book.png'} alt={book.titre} />
+                                                            </div>
+                                                            <div className={styles.libCardInfo}>
+                                                                <h4>{book.titre}</h4>
+                                                                <span>{book.auteur}</span>
+                                                                <div className={styles.libCardBadge}>{book.etat}</div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className={styles.inputGroup}>
-                                            <label>Filière *</label>
-                                            <select className={styles.select} value={formData.filiere} onChange={e => updateForm('filiere', e.target.value)}>
-                                                <option value="">Sélectionner...</option>
-                                                <option value="Informatique">Informatique</option>
-                                                <option value="Droit">Droit</option>
-                                                <option value="Économie">Économie</option>
-                                                <option value="Médecine">Médecine</option>
-                                            </select>
-                                        </div>
-                                        <div className={styles.inputGroup}>
-                                            <label>Niveau d'études *</label>
-                                            <select className={styles.select} value={formData.niveau} onChange={e => updateForm('niveau', e.target.value)}>
-                                                <option value="">Sélectionner...</option>
-                                                <option value="L1">L1 / 1ère année</option>
-                                                <option value="L2">L2 / 2ème année</option>
-                                                <option value="L3">L3 / 3ème année</option>
-                                                <option value="Master">Master</option>
-                                            </select>
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
                             )}
 

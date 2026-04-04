@@ -1,7 +1,7 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, User, Bell, LogOut, Plus, LayoutDashboard, MessageSquare, Shield, ShieldAlert, Lock, Eye, EyeOff, Save, X, Clock, CheckCircle, XCircle, Info } from 'lucide-react';
+import { Search, User, Bell, LogOut, Plus, LayoutDashboard, MessageSquare, Shield, ShieldAlert, Lock, Eye, EyeOff, Save, X, Clock, CheckCircle, XCircle, Info, Library } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../auth/useAuth';
 import { notificationApi } from '../../api/client';
@@ -245,6 +245,7 @@ export default function StudentLayout() {
                                         <span>{user?.email || 'etudiant@ytera.ma'}</span>
                                     </div>
                                     <button onClick={() => { setShowProfile(false); navigate('/student-dashboard/dashboard'); }}><User size={15} /> Mon Profil</button>
+                                    <button onClick={() => { setShowProfile(false); navigate('/student-dashboard/library'); }}><Library size={15} /> Ma Bibliothèque</button>
                                     <button onClick={() => { setShowPasswordModal(true); setShowProfile(false); }}><Shield size={15} /> Sécurité</button>
                                     <button onClick={() => { setShowProfile(false); navigate('/student-dashboard/support'); }}><ShieldAlert size={15} /> Support & Signalements</button>
                                     <div className={styles.menuDivider}></div>

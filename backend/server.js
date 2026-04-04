@@ -14,6 +14,7 @@ import plainteRoutes from './src/routes/plainteRoutes.js';
 import authRoutes from './src/routes/authRoutes.js';
 import conversationRoutes from './src/routes/conversationRoutes.js';
 import transactionRoutes from './src/routes/transactionRoutes.js';
+import exemplaireRoutes from './src/routes/exemplaireRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,6 +37,7 @@ app.use('/api/plaintes', plainteRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/exemplaires', exemplaireRoutes);
 
 app.get('/', (req, res) => {
     res.send('yTera Backend API is running...');

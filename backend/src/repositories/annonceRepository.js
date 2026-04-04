@@ -97,38 +97,39 @@ class AnnonceRepository {
         await connection.beginTransaction();
 
         try {
-            // 1. Insert into ouvrages
-            // We check if it exists by ISBN first to avoid duplicates
-            let ouvrageId;
-            const [existingOuvrage] = await connection.query('SELECT id FROM ouvrages WHERE isbn = ? AND isbn IS NOT NULL AND isbn <> ""', [data.isbn]);
-            
-            if (existingOuvrage.length > 0) {
-                ouvrageId = existingOuvrage[0].id;
-            } else {
-                const [ouvrageResult] = await connection.query(
-                    'INSERT INTO ouvrages (titre, auteur, isbn) VALUES (?, ?, ?)',
-                    [data.titre, data.auteur, data.isbn]
+            let exemplaireId = data.exemplaireId;
+
+            if (!exemplaireId) {
+                // 1. Insert into ouvrages
+                let ouvrageId;
+                const [existingOuvrage] = await connection.query('SELECT id FROM ouvrages WHERE isbn = ? AND isbn IS NOT NULL AND isbn <> ""', [data.isbn]);
+                
+                if (existingOuvrage.length > 0) {
+                    ouvrageId = existingOuvrage[0].id;
+                } else {
+                    const [ouvrageResult] = await connection.query(
+                        'INSERT INTO ouvrages (titre, auteur, isbn) VALUES (?, ?, ?)',
+                        [data.titre, data.auteur, data.isbn]
+                    );
+                    ouvrageId = ouvrageResult.insertId;
+                }
+
+                // 2. Insert into exemplaires
+                const photoUrl = (data.photoUrls && data.photoUrls.length > 0) 
+                    ? data.photoUrls[0] 
+                    : '/uploads/default-book.png';
+
+                const [exemplaireResult] = await connection.query(
+                    'INSERT INTO exemplaires (ouvrage_id, proprietaire_id, etat, photoUrl) VALUES (?, ?, ?, ?)',
+                    [ouvrageId, userId, data.etat, photoUrl]
                 );
-                ouvrageId = ouvrageResult.insertId;
+                exemplaireId = exemplaireResult.insertId;
             }
-
-            // 2. Insert into exemplaires
-            // photos are passed as an array in data.photoUrls from the controller
-            const photoUrl = (data.photoUrls && data.photoUrls.length > 0) 
-                ? data.photoUrls[0] 
-                : '/uploads/default-book.png';
-
-            const [exemplaireResult] = await connection.query(
-                'INSERT INTO exemplaires (ouvrage_id, proprietaire_id, etat, photoUrl) VALUES (?, ?, ?, ?)',
-                [ouvrageId, userId, data.etat, photoUrl]
-            );
-            const exemplaireId = exemplaireResult.insertId;
 
             // 3. Insert into annonces
             const status = 'ATTENTE'; // Always wait for moderation
             const datePublication = new Date();
             
-            // Format description to include duration/caution if it's a loan
             let fullDescription = data.description || '';
             if (data.typeEchange === 'PRET') {
                 fullDescription = `DURÉE: ${data.dureePret || 'N/A'}\nCAUTION: ${data.caution ? data.caution + ' DH' : 'Non'}\n---\n${fullDescription}`;
@@ -143,10 +144,16 @@ class AnnonceRepository {
             console.log('--- ANNONCE CREATED SUCCESSFULLY IN DB. ID:', annonceResult.insertId, '---');
             
             // 4. Notify Admins
+            let bookTitleStr = data.titre;
+            if (!bookTitleStr && exemplaireId) {
+                const [ouvrageRows] = await connection.query('SELECT o.titre FROM exemplaires e JOIN ouvrages o ON e.ouvrage_id = o.id WHERE e.id = ?', [exemplaireId]);
+                bookTitleStr = ouvrageRows[0]?.titre;
+            }
+            
             const notificationService = (await import('../services/notificationService.js')).default;
             notificationService.notifyAdmins(
                 'Nouvelle annonce à modérer',
-                `Un étudiant a publié le manuel: "${data.titre}". Merci d'examiner l'annonce.`,
+                `Un étudiant a publié le manuel: "${bookTitleStr || 'Inconnu'}". Merci d'examiner l'annonce.`,
                 'ANNONCE'
             );
 

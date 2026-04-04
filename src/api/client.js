@@ -76,4 +76,12 @@ export const transactionApi = {
     getAdminTransactions: () => api.get('/transactions/admin')
 };
 
+export const exemplaireApi = {
+    getMyLibrary: () => api.get('/exemplaires/my'),
+    getAvailable: () => api.get('/exemplaires/available'),
+    add: (data) => api.post('/exemplaires', data),
+    update: (id, data) => api.put(`/exemplaires/${id}`, data),
+    delete: (id) => api.delete(`/exemplaires/${id}`)
+};
+
 export default api;

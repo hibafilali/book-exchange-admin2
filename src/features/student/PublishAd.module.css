@@ -254,3 +254,120 @@
     .isbnBtn { padding: 0 1rem; }
     .isbnBtn span { display: none; }
 }
+
+.modeToggle {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    background: #f1f5f9;
+    padding: 0.5rem;
+    border-radius: 16px;
+}
+
+.modeBtn {
+    flex: 1;
+    padding: 0.875rem;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modeBtnActive {
+    background: white;
+    color: #ff5722;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.librarySelection {
+    margin-top: 1rem;
+}
+
+.libGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+.libCard {
+    background: #f8fafc;
+    border: 2px solid transparent;
+    border-radius: 18px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.libCard:hover {
+    transform: translateY(-4px);
+    border-color: #e2e8f0;
+}
+
+.libCardActive {
+    border-color: #ff5722;
+    background: #fff5f2;
+}
+
+.libCardImg {
+    height: 140px;
+}
+
+.libCardImg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.libCardInfo {
+    padding: 1rem;
+}
+
+.libCardInfo h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.libCardInfo span {
+    display: block;
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0.25rem 0 0.75rem;
+}
+
+.libCardBadge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.25rem 0.5rem;
+    background: white;
+    border-radius: 6px;
+    color: #ff5722;
+    text-transform: uppercase;
+}
+
+.libLoading, .libEmpty {
+    padding: 3rem;
+    text-align: center;
+    color: #64748b;
+}
+
+.btnLink {
+    background: none;
+    border: none;
+    color: #ff5722;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-top: 1rem;
+    display: block;
+    width: 100%;
+}

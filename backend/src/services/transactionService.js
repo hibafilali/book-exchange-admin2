@@ -1,5 +1,6 @@
 import transactionRepository from '../repositories/transactionRepository.js';
 import annonceRepository from '../repositories/annonceRepository.js';
+import exemplaireRepository from '../repositories/exemplaireRepository.js';
 import notificationRepository from '../repositories/notificationRepository.js';
 import pool from '../config/db.js';
 
@@ -84,17 +85,22 @@ class TransactionService {
             throw new Error('Transaction non trouvée ou non autorisée');
         }
 
-        // In a real app, we might need both to confirm.
-        // For now, let's allow either to complete (or implement a "CONFIRMED_BY_X" logic later).
+        // 1. Mark transaction as COMPLETED
         await transactionRepository.updateStatus(id, 'COMPLETED');
 
-        // Update Annonce to SOLD
+        // 2. Mark announcement as VENDU
         await annonceRepository.updateStatus(transaction.annonce_id, 'VENDU');
 
-        // Notify both
-        const message = `La transaction #${id} a été marquée comme terminée. Merci d'avoir utilisé yTera !`;
+        // 3. TRANSFER OWNERSHIP: the buyer now owns this physical copy (exemplaire)
+        const annonce = await annonceRepository.findById(transaction.annonce_id);
+        if (annonce && annonce.exemplaire) {
+            await exemplaireRepository.updateOwner(annonce.exemplaire.id, transaction.buyer_id);
+        }
+
+        // 4. Notifications
+        const message = `La transaction #${id} a été marquée comme terminée. Le livre est maintenant dans la bibliothèque de l'acheteur.`;
         await notificationRepository.create(transaction.seller_id, 'Transaction terminée', message, 'SUCCESS');
-        await notificationRepository.create(transaction.buyer_id, 'Transaction terminée', message, 'SUCCESS');
+        await notificationRepository.create(transaction.buyer_id, 'Félicitations !', `Achat terminé. Le livre "${transaction.ouvrage_titre}" a été ajouté à votre bibliothèque.`, 'SUCCESS');
 
         return true;
     }
