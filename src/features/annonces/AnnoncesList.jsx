@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Search, Eye, RotateCcw } from 'lucide-react';
+import { CheckCircle, XCircle, Search, Eye, RotateCcw, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import styles from './AnnoncesList.module.css';
 import { getFullImageUrl } from '../../utils/imageHandler';
-import { bookApi } from '../../api/client';
+import { bookApi, transactionApi } from '../../api/client';
 import Modal from '../../components/ui/Modal';
 
 const DEFAULT_BOOK_IMAGE = 'https://via.placeholder.com/150x200?text=Pas+d\'image';
@@ -14,6 +14,9 @@ export default function AnnoncesList() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [viewingAnnonce, setViewingAnnonce] = useState(null);
+    const [historyInfo, setHistoryInfo] = useState(null); // { id: exemplaireId, title: bookTitle }
+    const [historyData, setHistoryData] = useState([]);
+    const [isHistoryLoading, setIsHistoryLoading] = useState(false);
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -27,6 +30,7 @@ export default function AnnoncesList() {
                 const proprietaire = a.exemplaire?.proprietaire || {};
                 return {
                     id: a.id,
+                    exemplaireId: a.exemplaire?.id,
                     titre: ouvrage.titre || 'Sans titre',
                     auteur: ouvrage.auteur || 'Inconnu',
                     type: a.typeEchange || 'VENTE',
@@ -79,6 +83,24 @@ export default function AnnoncesList() {
             }
         } catch(err) {
             toast.error("Échec de la mise à jour");
+        }
+    };
+
+    const handleViewHistory = async (exemplaireId, titre) => {
+        if (!exemplaireId) {
+            toast.error("Identifiant du livre manquant");
+            return;
+        }
+        setHistoryInfo({ id: exemplaireId, title: titre });
+        setIsHistoryLoading(true);
+        try {
+            const response = await transactionApi.getExemplaireHistory(exemplaireId);
+            setHistoryData(response.data);
+        } catch (error) {
+            console.error("Failed to load history", error);
+            toast.error("Impossible de charger l'historique");
+        } finally {
+            setIsHistoryLoading(false);
         }
     };
 
@@ -212,6 +234,14 @@ export default function AnnoncesList() {
                             >
                                 <Eye size={16} />
                             </button>
+                            <button 
+                                className={`${styles.iconAction} ${styles.historyBtn}`} 
+                                title="Historique"
+                                onClick={() => handleViewHistory(annonce.exemplaireId, annonce.titre)}
+                                style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}
+                            >
+                                <History size={16} />
+                            </button>
                         </div>
                     </motion.div>
                 ))}
@@ -296,6 +326,61 @@ export default function AnnoncesList() {
                             <button 
                                 onClick={() => setViewingAnnonce(null)}
                                 style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid #e5e7eb', background: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
+                            >
+                                Fermer
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {historyInfo && (
+                <Modal
+                    isOpen={true}
+                    onClose={() => setHistoryInfo(null)}
+                    title={`Historique de l'exemplaire : ${historyInfo.title}`}
+                >
+                    <div style={{ minWidth: '400px' }}>
+                        {isHistoryLoading ? (
+                            <div style={{ padding: '2rem', textAlign: 'center' }}>Chargement de l'historique...</div>
+                        ) : historyData.length === 0 ? (
+                            <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+                                Aucune transaction enregistrée pour cet exemplaire.
+                            </div>
+                        ) : (
+                            <div className={styles.timeline}>
+                                {historyData.map((t, idx) => (
+                                    <div key={t.id} className={styles.timelineItem}>
+                                        <div className={styles.timelinePoint} />
+                                        <div className={styles.timelineContent}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                                <span style={{ fontWeight: '700', fontSize: '13px' }}>Transaction #{t.id}</span>
+                                                <span style={{ fontSize: '11px', color: '#9ca3af' }}>{new Date(t.created_at).toLocaleDateString()}</span>
+                                            </div>
+                                            <p style={{ margin: '0 0 6px', fontSize: '12px', color: '#4b5563' }}>
+                                                <strong>Vendeur:</strong> {t.seller_name} <br />
+                                                <strong>Acheteur:</strong> {t.buyer_name} <br />
+                                                <strong>Montant:</strong> {t.amount} DH
+                                            </p>
+                                            <span style={{ 
+                                                fontSize: '10px', 
+                                                fontWeight: '800', 
+                                                padding: '2px 8px', 
+                                                borderRadius: '10px',
+                                                background: t.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(107, 114, 128, 0.1)',
+                                                color: t.status === 'COMPLETED' ? '#10b981' : '#6b7280'
+                                            }}>
+                                                {t.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+                            <button 
+                                onClick={() => setHistoryInfo(null)}
+                                style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid #e5e7eb', background: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
                             >
                                 Fermer
                             </button>

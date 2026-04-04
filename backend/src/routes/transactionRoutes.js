@@ -21,4 +21,9 @@ router.get('/admin', (req, res, next) => {
     next();
 }, transactionController.getAdminTransactions);
 
+router.get('/admin/exemplaires/:exemplaireId/history', (req, res, next) => {
+    if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Accès interdit.' });
+    next();
+}, transactionController.getExemplaireHistory);
+
 export default router;

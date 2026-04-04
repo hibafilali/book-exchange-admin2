@@ -74,7 +74,8 @@ export const transactionApi = {
     schedule: (id, data) => api.patch(`/transactions/${id}/schedule`, data),
     complete: (id) => api.patch(`/transactions/${id}/complete`),
     cancel: (id) => api.patch(`/transactions/${id}/cancel`),
-    getAdminTransactions: () => api.get('/transactions/admin')
+    getAdminTransactions: () => api.get('/transactions/admin'),
+    getExemplaireHistory: (exemplaireId) => api.get(`/transactions/admin/exemplaires/${exemplaireId}/history`)
 };
 
 export const exemplaireApi = {

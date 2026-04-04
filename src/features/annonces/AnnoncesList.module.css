@@ -262,6 +262,45 @@
     gap: 0.5rem;
 }
 
+/* Timeline Styles */
+.timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding-left: 10px;
+    margin-top: 10px;
+}
+
+.timelineItem {
+    position: relative;
+    padding-left: 24px;
+    padding-bottom: 20px;
+    border-left: 2px solid #e5e7eb;
+}
+
+.timelineItem:last-child {
+    border-left: 2px solid transparent;
+}
+
+.timelinePoint {
+    position: absolute;
+    left: -7px;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #3b82f6;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.timelineContent {
+    background: #f9fafb;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
 .pageBtn {
     width: 32px;
     height: 32px;

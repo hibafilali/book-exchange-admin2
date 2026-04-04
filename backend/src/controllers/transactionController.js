@@ -94,6 +94,16 @@ class TransactionController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    async getExemplaireHistory(req, res) {
+        try {
+            const { exemplaireId } = req.params;
+            const history = await transactionService.getHistoryByExemplaireId(exemplaireId);
+            res.json(history);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 export default new TransactionController();

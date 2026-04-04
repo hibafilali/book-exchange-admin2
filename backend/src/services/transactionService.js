@@ -141,6 +141,10 @@ class TransactionService {
     async getAllTransactions() {
         return await transactionRepository.findAll();
     }
+
+    async getHistoryByExemplaireId(exemplaireId) {
+        return await transactionRepository.findByExemplaireId(exemplaireId);
+    }
 }
 
 export default new TransactionService();
