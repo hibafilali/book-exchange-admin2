@@ -20,6 +20,7 @@ export const bookApi = {
     getCatalog: () => api.get('/annonces/catalog'),
     getMy: () => api.get('/annonces/my'),
     getById: (id) => api.get(`/annonces/${id}`),
+    getMaxPrice: () => api.get('/annonces/max-price'),
     create: (data) => {
         // If data is FormData, axios handles the Content-Type automatically
         return api.post('/annonces', data);

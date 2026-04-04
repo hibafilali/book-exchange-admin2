@@ -105,6 +105,15 @@ class AnnonceController {
             });
         }
     }
+
+    async getMaxPrice(req, res) {
+        try {
+            const maxPrice = await annonceService.getMaxPrice();
+            res.json({ maxPrice });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 export default new AnnonceController();

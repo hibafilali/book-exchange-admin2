@@ -92,6 +92,11 @@ class AnnonceRepository {
         return true;
     }
 
+    async getMaxPrice() {
+        const [rows] = await pool.query('SELECT MAX(prixVente) as maxPrice FROM annonces');
+        return parseFloat(rows[0]?.maxPrice) || 0;
+    }
+
     async createWithTransaction(data, userId) {
         const connection = await pool.getConnection();
         await connection.beginTransaction();

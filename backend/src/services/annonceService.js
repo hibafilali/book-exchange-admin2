@@ -52,6 +52,10 @@ class AnnonceService {
         if (!userId) throw new Error('User ID is required');
         return await annonceRepository.createWithTransaction(data, userId);
     }
+
+    async getMaxPrice() {
+        return await annonceRepository.getMaxPrice();
+    }
 }
 
 export default new AnnonceService();

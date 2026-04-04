@@ -32,6 +32,7 @@ const MOCK_ISBN_DB = {
 
 export default function PublishAd() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [step, setStep] = useState(1);
     const [isPublishing, setIsPublishing] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
@@ -53,9 +54,13 @@ export default function PublishAd() {
     });
 
     useEffect(() => {
-        if (location.state?.exemplaireId) {
-            handleSelectFromLibrary(location.state.exemplaireId);
-        }
+        const initFromLibrary = async () => {
+            await fetchAvailableBooks();
+            if (location.state?.exemplaireId) {
+                handleSelectFromLibrary(location.state.exemplaireId, false); // false = stay on step 1
+            }
+        };
+        initFromLibrary();
     }, [location.state]);
 
     const fetchAvailableBooks = async () => {
@@ -70,7 +75,7 @@ export default function PublishAd() {
         }
     };
 
-    const handleSelectFromLibrary = async (exemplaireId) => {
+    const handleSelectFromLibrary = async (exemplaireId, jumpToStep3 = true) => {
         try {
             setLibraryLoading(true);
             const { data } = await exemplaireApi.getMyLibrary(); 
@@ -88,7 +93,9 @@ export default function PublishAd() {
                     ville: book.ville || ''
                 }));
                 setPublishMode('LIBRARY');
-                setStep(3); // Jump to Ad details
+                if (jumpToStep3) {
+                    setStep(3); // Jump to Ad details
+                }
             }
         } catch (error) {
             console.error(error);

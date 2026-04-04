@@ -161,6 +161,7 @@ export default function SearchExplorer() {
     const [selectedFilieres, setSelectedFilieres] = useState([]);
     const [filiereSearch, setFiliereSearch] = useState('');
     const [isbnDetected, setIsbnDetected] = useState(null);
+    const [maxLimit, setMaxLimit] = useState(110);
 
     const FILIERES = useMemo(() => [...new Set(allBooks.map(b => b.exemplaire?.ouvrage?.categorie?.label || b.filiere).filter(Boolean))].sort(), [allBooks]);
     const ISBN_MAP = useMemo(() => {
@@ -175,6 +176,19 @@ export default function SearchExplorer() {
 
     // Fetch Books from Backend
     useEffect(() => {
+        const fetchMetadata = async () => {
+            try {
+                const { data } = await bookApi.getMaxPrice();
+                const rawMax = parseFloat(data.maxPrice) || 0;
+                // Round up to nearest 50, minimum 110
+                const rounded = Math.max(110, Math.ceil(rawMax / 50) * 50);
+                setMaxLimit(rounded);
+                setMaxPrice(rounded);
+            } catch (error) {
+                console.error('Failed to fetch max price:', error);
+            }
+        };
+
         const fetchBooks = async () => {
             try {
                 setIsLoading(true);
@@ -186,8 +200,9 @@ export default function SearchExplorer() {
                 setIsLoading(false);
             }
         };
+        fetchMetadata();
         fetchBooks();
-    }, [query, selectedEtats, selectedType, selectedFilieres, maxPrice, sortBy]);
+    }, []);
 
     // ISBN magic auto-detection
     useEffect(() => {
@@ -239,10 +254,10 @@ export default function SearchExplorer() {
 
     const resetFilters = () => {
         setSelectedEtats([]); setSelectedType(null); setSelectedFilieres([]);
-        setMaxPrice(110); setQuery(''); setFiliereSearch('');
+        setMaxPrice(maxLimit); setQuery(''); setFiliereSearch('');
     };
 
-    const activeFilterCount = selectedEtats.length + (selectedType ? 1 : 0) + selectedFilieres.length + (maxPrice < 110 ? 1 : 0);
+    const activeFilterCount = selectedEtats.length + (selectedType ? 1 : 0) + selectedFilieres.length + (maxPrice < maxLimit ? 1 : 0);
     const filteredFilieres = FILIERES.filter(f => f.toLowerCase().includes(filiereSearch.toLowerCase()));
 
     // Shared sidebar content (reused for desktop + mobile)
@@ -275,9 +290,9 @@ export default function SearchExplorer() {
                 <h4>Prix maximum</h4>
                 <div className={styles.priceDisplay}>
                     <span>0 DH</span>
-                    <span className={styles.priceValue}>{maxPrice >= 110 ? '110 DH' : `${maxPrice} DH`}</span>
+                    <span className={styles.priceValue}>{maxPrice >= maxLimit ? `${maxLimit} DH+` : `${maxPrice} DH`}</span>
                 </div>
-                <input type="range" min="0" max="110" step="5" value={maxPrice}
+                <input type="range" min="0" max={maxLimit} step="5" value={maxPrice}
                     onChange={e => setMaxPrice(parseInt(e.target.value))}
                     className={styles.rangeSlider} />
             </div>
