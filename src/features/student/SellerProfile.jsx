@@ -6,10 +6,12 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { bookApi } from '../../api/client';
+import { getFullImageUrl } from '../../utils/imageHandler';
 import ManualCard from './ManualCard';
 import styles from './SellerProfile.module.css';
 
 // SELLER_ADS will be filtered below based on name
+const DEFAULT_AVATAR = null;
 
 const REVIEWS = [
     { id: 1, author: 'Sara L.', rating: 5, date: 'Il y a 2 jours', text: 'Super échange. Livre conforme à la description, état neuf. Amine est très réactif !' },
@@ -61,11 +63,16 @@ export default function SellerProfile() {
     const rating = parseFloat(rawRating) > 5 ? 5.0 : parseFloat(rawRating) || 4.8;
     const reviewsCount = Math.floor(exchangesCount * 0.7);
     
+    // Find first ad to get real user metadata
+    const firstAd = sellerAds[0] || allBooks[0];
+    const realUser = firstAd?.exemplaire?.proprietaire;
+
     const SELLER_DATA = {
-        name: name,
-        avatar: name.charAt(0).toUpperCase(),
-        ville: nameHash % 2 === 0 ? 'Casablanca' : 'Fès',
-        filiere: nameHash % 3 === 0 ? 'Ingénierie Informatique' : (nameHash % 2 === 0 ? 'Médecine' : 'Droit & Gestion'),
+        name: realUser?.nom || name,
+        avatarInitial: (realUser?.nom || name).charAt(0).toUpperCase(),
+        photoUrl: realUser?.photoUrl, // Expecting a photoUrl in the owner object
+        ville: realUser?.ville || (nameHash % 2 === 0 ? 'Casablanca' : 'Fès'),
+        filiere: realUser?.filiere || (nameHash % 3 === 0 ? 'Ingénierie Informatique' : (nameHash % 2 === 0 ? 'Médecine' : 'Droit & Gestion')),
         joined: nameHash % 2 === 0 ? 'Septembre 2024' : 'Février 2025',
         isVerifie,
         rating,
@@ -73,7 +80,7 @@ export default function SellerProfile() {
         exchangesCount,
         responseRate: (90 + (nameHash % 10)) + '%',
         responseTime: nameHash % 2 === 0 ? '< 1 heure' : '< 1 jour',
-        bio: `Salut ! Je suis ${name}. Je propose mes anciens manuels d'études. N'hésitez pas à me contacter pour toute information ! Remise en main propre privilégiée.`
+        bio: `Salut ! Je suis ${realUser?.nom || name}. Je propose mes anciens manuels d'études. N'hésitez pas à me contacter pour toute information ! Remise en main propre privilégiée.`
     };
 
     return (
@@ -89,7 +96,17 @@ export default function SellerProfile() {
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.5, type: 'spring' }}
                     >
-                        <div className={styles.avatar}>{SELLER_DATA.avatar}</div>
+                        <div className={styles.avatar}>
+                            {SELLER_DATA.photoUrl ? (
+                                <img 
+                                    src={getFullImageUrl(SELLER_DATA.photoUrl)} 
+                                    alt={SELLER_DATA.name} 
+                                    className={styles.avatarImg}
+                                />
+                            ) : (
+                                SELLER_DATA.avatarInitial
+                            )}
+                        </div>
                         {SELLER_DATA.isVerifie && (
                             <div className={styles.verifiedBadge} title="Étudiant vérifié">
                                 <ShieldCheck size={18} />
