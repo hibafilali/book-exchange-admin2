@@ -22,6 +22,10 @@ export default function AdminTransactions() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 7;
+
     useEffect(() => {
         const fetchTransactions = async () => {
             try {
@@ -45,6 +49,70 @@ export default function AdminTransactions() {
         const matchesStatus = statusFilter === 'ALL' || t.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
+
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value);
+        setCurrentPage(1);
+    };
+
+    const handleStatusFilterChange = (e) => {
+        setStatusFilter(e.target.value);
+        setCurrentPage(1);
+    };
+
+    // Calc pagination
+    const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const paginatedTransactions = filteredTransactions.slice(indexOfFirstItem, indexOfLastItem);
+
+    // Optimized pagination range for large datasets
+    const getPaginationRange = () => {
+        const delta = 2;
+        const range = [];
+
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+                range.push(i);
+            }
+        }
+
+        const rangeWithDots = [];
+        let l;
+        for (const i of range) {
+            if (l) {
+                if (i - l === 2) {
+                    rangeWithDots.push(l + 1);
+                } else if (i - l !== 1) {
+                    rangeWithDots.push('...');
+                }
+            }
+            rangeWithDots.push(i);
+            l = i;
+        }
+        return rangeWithDots;
+    };
+
+    const handleStatusUpdate = async (id, action) => {
+        try {
+            let response;
+            if (action === 'accept') response = await transactionApi.accept(id);
+            else if (action === 'schedule') response = await transactionApi.schedule(id, { date: new Date().toISOString(), lieu: 'Campus yTera' });
+            else if (action === 'complete') response = await transactionApi.complete(id);
+            else if (action === 'cancel') response = await transactionApi.cancel(id);
+
+            if (response) {
+                // Update local list
+                setTransactions(prev => prev.map(t => 
+                    t.id === id ? { ...t, status: (action === 'schedule' ? 'MEETING_SCHEDULED' : action.toUpperCase()) } : t
+                ));
+            }
+        } catch (error) {
+            console.error(`Failed to update status (${action}):`, error);
+        } finally {
+            // Updated: Removed openMenu state update
+        }
+    };
 
     return (
         <div className={styles.adminContainer}>
@@ -75,7 +143,7 @@ export default function AdminTransactions() {
                         type="text" 
                         placeholder="Rechercher un livre, un étudiant, un ID..." 
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={handleSearchChange}
                         className={styles.searchInput}
                     />
                 </div>
@@ -83,7 +151,7 @@ export default function AdminTransactions() {
                     <Filter size={18} className={styles.filterIcon} />
                     <select 
                         value={statusFilter} 
-                        onChange={(e) => setStatusFilter(e.target.value)}
+                        onChange={handleStatusFilterChange}
                         className={styles.filterSelect}
                     >
                         <option value="ALL">Tous les statuts</option>
@@ -120,11 +188,10 @@ export default function AdminTransactions() {
                                 <th>Montant</th>
                                 <th>Statut</th>
                                 <th>Date Création</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredTransactions.map((t) => {
+                            {paginatedTransactions.map((t) => {
                                 const stat = STATUS_CONFIG[t.status];
                                 const StatusIcon = stat.icon;
                                 
@@ -175,16 +242,51 @@ export default function AdminTransactions() {
                                                 {new Date(t.created_at).toLocaleDateString('fr-FR')}
                                             </div>
                                         </td>
-                                        <td>
-                                            <button className={styles.actionBtn}>
-                                                <MoreHorizontal size={18} />
-                                            </button>
-                                        </td>
                                     </motion.tr>
                                 );
                             })}
                         </tbody>
                     </table>
+                )}
+                
+                {/* Pagination Stats */}
+                {!isLoading && filteredTransactions.length > 0 && (
+                    <div className={styles.paginationFooter}>
+                        <div className={styles.paginationInfo}>
+                            Affichage de <b>{indexOfFirstItem + 1}</b> à <b>{Math.min(indexOfLastItem, filteredTransactions.length)}</b> sur <b>{filteredTransactions.length}</b> transactions
+                        </div>
+                        <div className={styles.paginationControls}>
+                            <button 
+                                className={styles.pageBtn} 
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1}
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            
+                            {getPaginationRange().map((page, index) => (
+                                page === '...' ? (
+                                    <span key={`dots-${index}`} className={styles.paginationEllipsis}>...</span>
+                                ) : (
+                                    <button 
+                                        key={`page-${page}`}
+                                        className={`${styles.pageBtn} ${currentPage === page ? styles.activePage : ''}`}
+                                        onClick={() => setCurrentPage(page)}
+                                    >
+                                        {page}
+                                    </button>
+                                )
+                            ))}
+
+                            <button 
+                                className={styles.pageBtn}
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage === totalPages}
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>

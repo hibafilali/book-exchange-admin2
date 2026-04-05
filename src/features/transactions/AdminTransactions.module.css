@@ -1,7 +1,8 @@
 .adminContainer {
-    padding: 2.5rem;
+    padding: 1rem 1.5rem;
     background: #f8fafc;
     min-height: 100vh;
+    width: 100%;
 }
 
 .header {
@@ -267,4 +268,150 @@
 .emptyState p {
     margin-top: 0.5rem;
     font-weight: 500;
+}
+
+/* Pagination */
+.paginationFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 2rem;
+    background: #fbfcfd;
+    border-top: 1px solid #f1f5f9;
+}
+
+.paginationInfo {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.paginationInfo b {
+    color: #0f172a;
+}
+
+.paginationControls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.pageBtn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 750;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pageBtn:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+    transform: translateY(-1px);
+}
+
+.activePage {
+    background: #ff5722 !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(255,87,34,0.25);
+}
+
+.pageBtn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.paginationEllipsis {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.actionsCol {
+    width: 60px;
+    position: relative;
+}
+
+.actionMenuWrapper {
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.dropdownMenu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 50;
+    min-width: 160px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+    animation: dropdownFade 0.2s ease-out;
+}
+
+@keyframes dropdownFade {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.menuItem {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.2s;
+}
+
+.menuItem:hover {
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.menuDivider {
+    height: 1px;
+    background: #f1f5f9;
+    margin: 0.25rem 0;
+}
+
+.dangerItem {
+    color: #ef4444 !important;
+}
+
+.dangerItem:hover {
+    background: #fff1f2 !important;
+}
+
+.emptyMenuItem {
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-style: italic;
+    text-align: center;
 }

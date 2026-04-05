@@ -103,6 +103,33 @@ export default function UsersList() {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const paginatedUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
+    
+    // Optimized pagination range for large datasets
+    const getPaginationRange = () => {
+        const delta = 2;
+        const range = [];
+
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+                range.push(i);
+            }
+        }
+
+        const rangeWithDots = [];
+        let l;
+        for (const i of range) {
+            if (l) {
+                if (i - l === 2) {
+                    rangeWithDots.push(l + 1);
+                } else if (i - l !== 1) {
+                    rangeWithDots.push('...');
+                }
+            }
+            rangeWithDots.push(i);
+            l = i;
+        }
+        return rangeWithDots;
+    };
 
     return (
         <div className={styles.container}>
@@ -263,14 +290,18 @@ export default function UsersList() {
                         >
                             ‹
                         </button>
-                        {[...Array(totalPages)].map((_, i) => (
-                            <button
-                                key={i}
-                                className={`${styles.pageBtn} ${currentPage === i + 1 ? styles.activePage : ''}`}
-                                onClick={() => setCurrentPage(i + 1)}
-                            >
-                                {i + 1}
-                            </button>
+                        {getPaginationRange().map((page, i) => (
+                            page === '...' ? (
+                                <span key={`dots-${i}`} className={styles.paginationEllipsis}>...</span>
+                            ) : (
+                                <button
+                                    key={i}
+                                    className={`${styles.pageBtn} ${currentPage === page ? styles.activePage : ''}`}
+                                    onClick={() => setCurrentPage(page)}
+                                >
+                                    {page}
+                                </button>
+                            )
                         ))}
                         <button
                             className={styles.pageBtn}

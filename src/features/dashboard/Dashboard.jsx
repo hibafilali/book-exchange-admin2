@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, BookOpen, ShieldAlert, ArrowUpRight, TrendingUp, Calendar, Inbox, BarChart3, GraduationCap, ShoppingCart, HandHeart, Gift, MoreHorizontal, Zap, Command, Database } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -82,6 +82,58 @@ export default function Dashboard() {
     const [chartRange, setChartRange] = useState('7');
     const [isDownloading, setIsDownloading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [statsData, setStatsData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/admin/stats');
+                const data = await response.json();
+                setStatsData(data);
+            } catch (error) {
+                console.error('Failed to fetch admin stats:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
+
+    const dynamicStats = statsData ? [
+        { 
+            label: 'Utilisateurs Actifs', 
+            value: statsData.activeUsers.toLocaleString(), 
+            change: '+12%', 
+            icon: Users, 
+            color: '#3b82f6', 
+            trend: statsData.trends.users.map(v => ({v})) 
+        },
+        { 
+            label: 'Annonces en ligne', 
+            value: statsData.onlineAds.toLocaleString(), 
+            change: '+5%', 
+            icon: BookOpen, 
+            color: '#10b981', 
+            trend: statsData.trends.ads.map(v => ({v})) 
+        },
+        { 
+            label: 'Signalements récents', 
+            value: statsData.recentReports.toLocaleString(), 
+            change: '-8%', 
+            icon: ShieldAlert, 
+            color: '#ef4444', 
+            trend: statsData.trends.reports.map(v => ({v})) 
+        },
+        { 
+            label: 'Échanges réussis', 
+            value: statsData.successfulExchanges.toLocaleString(), 
+            change: '+18%', 
+            icon: TrendingUp, 
+            color: '#f59e0b', 
+            trend: statsData.trends.exchanges.map(v => ({v})) 
+        },
+    ] : STATS;
 
     const filteredFilieres = TOP_FILIERES.filter(f => 
         f.nom.toLowerCase().includes(searchTerm.toLowerCase())
@@ -119,7 +171,7 @@ export default function Dashboard() {
             </header>
 
             <div className={styles.statsGrid}>
-                {STATS.map((stat, i) => {
+                {dynamicStats.map((stat, i) => {
                     const Icon = stat.icon;
                     const isPositive = stat.change.startsWith('+');
                     return (
