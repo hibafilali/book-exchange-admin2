@@ -83,6 +83,81 @@ class UserController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    // Obtenir le résumé pour le sidebar du dashboard
+    async getUserDashboardSummary(req, res) {
+        try {
+            const userId = req.user.id;
+
+            // 1. User Stats
+            const [[stats]] = await pool.query('SELECT * FROM user_stats WHERE user_id = ?', [userId]);
+
+            // 2. Active Loans
+            const [emprunts] = await pool.query(`
+                SELECT e.*, o.titre, ex.photoUrl
+                FROM emprunts e
+                JOIN exemplaires ex ON e.exemplaire_id = ex.id
+                JOIN ouvrages o ON ex.ouvrage_id = o.id
+                WHERE e.user_id = ? AND e.status = 'EN_COURS'
+                ORDER BY e.date_retour ASC
+            `, [userId]);
+
+            // 3. Leaderboard (Top 3)
+            const [leaderboard] = await pool.query(`
+                SELECT u.prenom, u.nom, us.points
+                FROM user_stats us
+                JOIN users u ON us.user_id = u.id
+                ORDER BY us.points DESC
+                LIMIT 3
+            `);
+
+            // 4. Recent Activities
+            const [activities] = await pool.query(`
+                SELECT * FROM activities
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                LIMIT 4
+            `, [userId]);
+
+            res.json({
+                user: {
+                  name: req.user.name || req.user.prenom || 'Étudiant',
+                  role: req.user.role
+                },
+                stats: stats || { 
+                    points: 0, 
+                    rank_label: 'Membre Argent', 
+                    reliability_index: 4.0, 
+                    next_rank_info: 'Commencez à échanger pour monter en rang !' 
+                },
+                emprunts: emprunts.map(e => ({
+                    id: e.id,
+                    titre: e.titre,
+                    image: e.photoUrl,
+                    date_retour: e.date_retour,
+                    status: e.status
+                })),
+                leaderboard: leaderboard.map((u, index) => ({
+                    id: index + 1,
+                    pseudo: u.prenom || u.nom?.split(' ')[0] || 'Anonyme',
+                    points: u.points,
+                    rang: index + 1,
+                    color: index === 0 ? '#047857' : index === 1 ? '#0369a1' : '#b45309'
+                })),
+                activities: activities.map(a => ({
+                    id: a.id,
+                    type: a.type,
+                    texte: a.title,
+                    livre: a.content,
+                    created_at: a.created_at
+                }))
+            });
+
+        } catch (error) {
+            console.error('Sidebar error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 export default new UserController();

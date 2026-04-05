@@ -34,6 +34,7 @@ export const dashboardApi = {
 
 export const userApi = {
     getAll: () => api.get('/users'),
+    getSidebarData: () => api.get('/users/me/sidebar'),
     create: (data) => api.post('/users', data),
     update: (id, data) => api.put(`/users/${id}`, data),
     delete: (id) => api.delete(`/users/${id}`)

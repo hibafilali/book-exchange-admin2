@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BookOpen, Heart, TrendingUp, Wallet, Trophy, ArrowRight, Eye, PlusCircle, MessageCircle, Clock, Send, Target, Star, Award, Sparkles } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
-import { bookApi } from '../../api/client';
+import { bookApi, userApi } from '../../api/client';
 import { getFullImageUrl } from '../../utils/imageHandler';
 import styles from './StudentHome.module.css';
 
@@ -12,26 +12,7 @@ const TYPE_BG    = { VENTE: '#FDDCB5', PRET: '#BEE3F8', DON: '#B2F5D8' };
 const TYPE_COLOR = { VENTE: '#9C4221', PRET: '#2B6CB0', DON: '#22543D' };
 const TYPE_LABEL = { VENTE: 'Vente', PRET: 'Prêt', DON: 'Don' };
 
-// ============================
-// MOCK DATA (Remnants for UI density)
-// ============================
-const MOCK_EMPRUNTS = [
-    { id: 201, titre: "Base de données relationnelles", rendu: "À rendre dans 3 jours", urgence: "haute", image: "/admin/books/intro-algorithms.png" },
-    { id: 202, titre: "Architecture des Ordinateurs", rendu: "En cours (reste 12 j.)", urgence: "basse", image: "/admin/books/refactoring.png" },
-];
-
-const MOCK_TIMELINE = [
-    { id: 301, texte: "Sarah M. a demandé votre livre", livre: "Systèmes d'exploitation", temps: "Il y a 2h" },
-    { id: 302, texte: "Demande de prêt acceptée par", livre: "Hiba (Intro au Droit)", temps: "Hier à 14:30" },
-    { id: 303, texte: "Ton annonce est maintenant", livre: "VALIDÉE ✅", temps: "Il y a 2 jours" },
-    { id: 304, texte: "Leïla K. a noté votre échange", livre: "5 étoiles ⭐", temps: "Il y a 5 jours" },
-];
-
-const MOCK_LEADERBOARD = [
-    { id: 1, pseudo: 'Hiba', points: 450, rang: 1, color: '#047857' },
-    { id: 2, pseudo: 'Yasmine', points: 300, rang: 2, color: '#0369a1' },
-    { id: 3, pseudo: 'Omar', points: 125, rang: 3, color: '#b45309' },
-];
+// Mock data removed in favor of dynamic API data
 
 // ============================
 // COMPONENT
@@ -40,24 +21,60 @@ export default function StudentHome() {
     const { user } = useAuth();
     const [imgErrors, setImgErrors] = useState({});
     const [annonces, setAnnonces] = useState([]);
+    const [sidebarData, setSidebarData] = useState({ 
+        stats: null, 
+        emprunts: [], 
+        leaderboard: [], 
+        activities: [] 
+    });
     const [isLoading, setIsLoading] = useState(true);
+    const [isSidebarLoading, setIsSidebarLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchRecent = async () => {
+        const fetchData = async () => {
             try {
                 setIsLoading(true);
-                const response = await bookApi.getAll({ status: 'ACTIF' });
-                // Store all, we'll slice for different sections
-                setAnnonces(response.data);
+                setIsSidebarLoading(true);
+                
+                const [annoncesRes, sidebarRes] = await Promise.all([
+                    bookApi.getAll({ status: 'ACTIF' }),
+                    userApi.getSidebarData()
+                ]);
+                
+                setAnnonces(annoncesRes.data);
+                setSidebarData(sidebarRes.data);
             } catch (error) {
                 console.error('Failed to fetch home data:', error);
             } finally {
                 setIsLoading(false);
+                setIsSidebarLoading(false);
             }
         };
-        fetchRecent();
+        fetchData();
     }, []);
+
+    const getRemainingDays = (dateStr) => {
+        const diff = new Date(dateStr) - new Date();
+        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        if (days < 0) return 'En retard';
+        if (days === 0) return 'À rendre aujourd\'hui';
+        if (days === 1) return 'À rendre demain';
+        return `À rendre dans ${days} jours`;
+    };
+
+    const getRelativeTime = (dateStr) => {
+        const diff = new Date() - new Date(dateStr);
+        const mins = Math.floor(diff / 60000);
+        const hrs = Math.floor(mins / 60);
+        const days = Math.floor(hrs / 24);
+
+        if (mins < 1) return 'À l\'instant';
+        if (mins < 60) return `Il y a ${mins} min`;
+        if (hrs < 24) return `Il y a ${hrs}h`;
+        if (days === 1) return 'Hier';
+        return `Il y a ${days} jours`;
+    };
 
     // ---- Reusable Book Card ----
     const BookCard = ({ book, showBadge = false }) => {
@@ -190,20 +207,45 @@ export default function StudentHome() {
                 <aside className={styles.aside}>
                     <div className={styles.asideSticky}>
 
-                        {/* Profile */}
+                        {/* Profile & Trust */}
                         <div className={styles.box}>
-                            <div className={styles.profile}>
-                                <img src={`https://ui-avatars.com/api/?name=${user?.prenom||'U'}+${user?.nom||'U'}&background=4f46e5&color=fff&rounded=true&size=80`} alt="" className={styles.avatar}/>
-                                <div>
-                                    <h3>{user?.prenom} {user?.nom}</h3>
-                                    <span className={styles.badge2}><Award size={11}/> Membre Or</span>
-                                </div>
-                            </div>
-                            <div className={styles.trust}>
-                                <div className={styles.trustHead}><span>Indice de Fiabilité</span><span className={styles.trustVal}><Star size={11} color="#eab308" fill="#eab308"/> 4.9/5</span></div>
-                                <div className={styles.bar}><motion.div className={styles.barFill} initial={{width:0}} animate={{width:'92%'}} transition={{duration:1,delay:.4}}/></div>
-                                <small>Plus que 3 prêts sans retard pour le rang Platine !</small>
-                            </div>
+                            {isSidebarLoading ? (
+                                <div className={styles.loadingSmall}>Chargement...</div>
+                            ) : (
+                                <>
+                                    <div className={styles.profile}>
+                                        <img 
+                                            src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.prenom||'U'}+${user?.nom||'U'}&background=4f46e5&color=fff&rounded=true&size=80`} 
+                                            alt="" 
+                                            className={styles.avatar}
+                                        />
+                                        <div>
+                                            <h3>{user?.prenom} {user?.nom}</h3>
+                                            <span className={styles.badge2}>
+                                                <Award size={11}/> {sidebarData.stats?.rank_label || 'Membre Argent'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className={styles.trust}>
+                                        <div className={styles.trustHead}>
+                                            <span>Indice de Fiabilité</span>
+                                            <span className={styles.trustVal}>
+                                                <Star size={11} color="#eab308" fill="#eab308"/> 
+                                                {sidebarData.stats?.reliability_index || '4.50'}/5
+                                            </span>
+                                        </div>
+                                        <div className={styles.bar}>
+                                            <motion.div 
+                                                className={styles.barFill} 
+                                                initial={{ width: 0 }} 
+                                                animate={{ width: `${(sidebarData.stats?.reliability_index || 4.5) * 20}%` }} 
+                                                transition={{ duration: 1, delay: .4 }}
+                                            />
+                                        </div>
+                                        <small>{sidebarData.stats?.next_rank_info}</small>
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         {/* Wishlist Alert (Moved here from main) */}
@@ -219,12 +261,18 @@ export default function StudentHome() {
                         {/* Emprunts */}
                         <div className={styles.box}>
                             <h3 className={styles.boxTitle}><Clock size={14} style={{color:'#f59e0b'}}/> Emprunts en cours</h3>
-                            {MOCK_EMPRUNTS.map(e => (
+                            {isSidebarLoading ? (
+                                <div className={styles.loadingSmall}>Chargement...</div>
+                            ) : sidebarData.emprunts.length === 0 ? (
+                                <div className={styles.emptySmall}>Aucun emprunt actif.</div>
+                            ) : sidebarData.emprunts.map(e => (
                                 <div key={e.id} className={styles.emprunt}>
                                     <img src={getFullImageUrl(e.image)} alt="" />
                                     <div>
                                         <span className={styles.empruntName}>{e.titre}</span>
-                                        <span className={`${styles.empruntTag} ${e.urgence === 'haute' ? styles.urgent : styles.ok}`}>{e.rendu}</span>
+                                        <span className={`${styles.empruntTag} ${new Date(e.date_retour) - new Date() < 86400000 * 3 ? styles.urgent : styles.ok}`}>
+                                            {getRemainingDays(e.date_retour)}
+                                        </span>
                                     </div>
                                 </div>
                             ))}
@@ -233,29 +281,37 @@ export default function StudentHome() {
                         {/* Leaderboard */}
                         <div className={styles.box}>
                             <h3 className={styles.boxTitle}><Trophy size={14} style={{color:'#eab308'}}/> Leaderboard</h3>
-                            <div className={styles.podium}>
-                                {MOCK_LEADERBOARD.map(u => (
-                                    <div key={u.id} className={styles.podiumUser}>
-                                        <div className={styles.podiumAv}>
-                                            <img src={`https://ui-avatars.com/api/?name=${u.pseudo}&background=f1f5f9&color=334155&rounded=true&size=64`} alt=""/>
-                                            <span style={{background: u.color}}>{u.rang}</span>
+                            {isSidebarLoading ? (
+                                <div className={styles.loadingSmall}>Chargement...</div>
+                            ) : (
+                                <div className={styles.podium}>
+                                    {sidebarData.leaderboard.map(u => (
+                                        <div key={u.id} className={styles.podiumUser}>
+                                            <div className={styles.podiumAv}>
+                                                <img src={`https://ui-avatars.com/api/?name=${u.pseudo}&background=f1f5f9&color=334155&rounded=true&size=64`} alt=""/>
+                                                <span style={{background: u.color}}>{u.rang}</span>
+                                            </div>
+                                            <strong>{u.pseudo}</strong>
+                                            <em>{u.points} pts</em>
                                         </div>
-                                        <strong>{u.pseudo}</strong>
-                                        <em>{u.points} pts</em>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Activité */}
                         <div className={styles.box}>
                             <h3 className={styles.boxTitle}><MessageCircle size={14} style={{color:'#3b82f6'}}/> Activité Récente</h3>
-                            {MOCK_TIMELINE.map(t => (
+                            {isSidebarLoading ? (
+                                <div className={styles.loadingSmall}>Chargement...</div>
+                            ) : sidebarData.activities.length === 0 ? (
+                                <div className={styles.emptySmall}>Aucun événement récent.</div>
+                            ) : sidebarData.activities.map(t => (
                                 <div key={t.id} className={styles.activity}>
                                     <div className={styles.dot}/>
                                     <div>
                                         <p>{t.texte} — <strong>{t.livre}</strong></p>
-                                        <small>{t.temps}</small>
+                                        <small>{getRelativeTime(t.created_at)}</small>
                                     </div>
                                 </div>
                             ))}
