@@ -25,7 +25,8 @@ export const bookApi = {
         // If data is FormData, axios handles the Content-Type automatically
         return api.post('/annonces', data);
     },
-    updateStatus: (id, status) => api.put(`/annonces/${id}/status`, { status })
+    updateStatus: (id, status) => api.put(`/annonces/${id}/status`, { status }),
+    delete: (id) => api.delete(`/annonces/${id}`)
 };
 
 export const dashboardApi = {
@@ -35,6 +36,9 @@ export const dashboardApi = {
 export const userApi = {
     getAll: () => api.get('/users'),
     getSidebarData: () => api.get('/users/me/sidebar'),
+    uploadAvatar: (formData) => api.put('/users/me/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
     create: (data) => api.post('/users', data),
     update: (id, data) => api.put(`/users/${id}`, data),
     delete: (id) => api.delete(`/users/${id}`)

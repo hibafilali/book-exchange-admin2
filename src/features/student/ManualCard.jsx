@@ -12,6 +12,7 @@ const TYPE_CONFIG = {
     VENTE: { label: TYPE_LABELS.VENTE, gradient: 'var(--gradient-vente)', shadow: 'var(--shadow-vente)', color: TYPE_COLORS.VENTE },
     PRET: { label: TYPE_LABELS.PRET, gradient: 'var(--gradient-pret)', shadow: 'var(--shadow-pret)', color: TYPE_COLORS.PRET },
     DON: { label: TYPE_LABELS.DON, gradient: 'var(--gradient-don)', shadow: 'var(--shadow-don)', color: TYPE_COLORS.DON },
+    ECHANGE: { label: TYPE_LABELS.ECHANGE, gradient: 'var(--gradient-echange)', shadow: 'var(--shadow-echange)', color: TYPE_COLORS.ECHANGE },
 };
 
 const ETAT_CONFIG = {
@@ -32,7 +33,8 @@ export default function ManualCard({ annonce, onCardClick, index = 0 }) {
 
     const priceLabel = !annonce.id ? 'Bibliothèque' 
         : annonce.typeEchange === 'VENTE' ? `${annonce.prixVente} DH`
-        : annonce.typeEchange === 'DON' ? 'Gratuit' : 'Prêt';
+        : annonce.typeEchange === 'DON' ? 'Gratuit' 
+        : annonce.typeEchange === 'ECHANGE' ? 'Échange' : 'Prêt';
 
     return (
         <motion.div

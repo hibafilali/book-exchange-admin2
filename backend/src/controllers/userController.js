@@ -158,6 +158,22 @@ class UserController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    async updateAvatar(req, res) {
+        try {
+            const userId = req.user.id;
+            if (!req.file) {
+                return res.status(400).json({ error: 'No file uploaded' });
+            }
+
+            const avatarUrl = `/uploads/${req.file.filename}`;
+            await pool.query('UPDATE users SET avatarUrl = ? WHERE id = ?', [avatarUrl, userId]);
+
+            res.json({ avatarUrl, message: 'Avatar updated successfully' });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 export default new UserController();

@@ -8,9 +8,9 @@ import { getFullImageUrl } from '../../utils/imageHandler';
 import styles from './StudentHome.module.css';
 
 // Badge Colors (Pastels doux)
-const TYPE_BG    = { VENTE: '#FDDCB5', PRET: '#BEE3F8', DON: '#B2F5D8' };
-const TYPE_COLOR = { VENTE: '#9C4221', PRET: '#2B6CB0', DON: '#22543D' };
-const TYPE_LABEL = { VENTE: 'Vente', PRET: 'Prêt', DON: 'Don' };
+const TYPE_BG    = { VENTE: '#FDDCB5', PRET: '#BEE3F8', DON: '#B2F5D8', ECHANGE: '#E9D5FF' };
+const TYPE_COLOR = { VENTE: '#9C4221', PRET: '#2B6CB0', DON: '#22543D', ECHANGE: '#6B21A8' };
+const TYPE_LABEL = { VENTE: 'Vente', PRET: 'Prêt', DON: 'Don', ECHANGE: 'Échange' };
 
 // Mock data removed in favor of dynamic API data
 

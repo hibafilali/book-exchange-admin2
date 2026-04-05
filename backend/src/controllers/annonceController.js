@@ -107,6 +107,26 @@ class AnnonceController {
         }
     }
 
+    async delete(req, res) {
+        try {
+            const { id } = req.params;
+            const userId = req.user.id;
+            
+            // Check ownership
+            const annonce = await annonceService.getAnnonceById(id);
+            if (!annonce) return res.status(404).json({ error: 'Annonce not found' });
+            
+            if (annonce.exemplaire.proprietaire.id !== userId) {
+                return res.status(403).json({ error: 'Vous n\'êtes pas autorisé à supprimer cette annonce' });
+            }
+            
+            await annonceService.deleteAnnonce(id);
+            res.json({ message: 'Annonce archivée avec succès' });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
     async getMaxPrice(req, res) {
         try {
             const maxPrice = await annonceService.getMaxPrice();

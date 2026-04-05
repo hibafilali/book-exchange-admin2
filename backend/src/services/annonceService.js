@@ -17,7 +17,7 @@ class AnnonceService {
 
     async updateStatus(id, status) {
         // Validate enum
-        const validStatuses = ['ACTIF', 'ATTENTE', 'REJETEE', 'EXPIREE'];
+        const validStatuses = ['ACTIF', 'ATTENTE', 'REJETEE', 'EXPIREE', 'VENDU', 'SUPPRIMEE', 'EN_TRANSACTION'];
         if (!validStatuses.includes(status)) {
             throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
         }
@@ -51,6 +51,10 @@ class AnnonceService {
     async createAnnonce(data, userId) {
         if (!userId) throw new Error('User ID is required');
         return await annonceRepository.createWithTransaction(data, userId);
+    }
+
+    async deleteAnnonce(id) {
+        return await annonceRepository.updateStatus(id, 'SUPPRIMEE');
     }
 
     async getMaxPrice() {

@@ -20,6 +20,7 @@ const TYPE_CONFIG = {
     VENTE: { label: 'Vente', gradient: 'var(--gradient-vente)', color: TYPE_COLORS.VENTE },
     PRET: { label: 'Prêt', gradient: 'var(--gradient-pret)', color: TYPE_COLORS.PRET },
     DON: { label: 'Don', gradient: 'var(--gradient-don)', color: TYPE_COLORS.DON },
+    ECHANGE: { label: 'Échange', gradient: 'var(--gradient-echange)', color: TYPE_COLORS.ECHANGE },
 };
 
 const ETAT_CONFIG = {
@@ -92,7 +93,8 @@ export default function BookDetails() {
     }
 
     const priceLabel = book.typeEchange === 'VENTE' ? `${book.prixVente} DH`
-        : book.typeEchange === 'DON' ? 'Gratuit' : 'Prêt gratuit';
+        : book.typeEchange === 'DON' ? 'Gratuit' 
+        : book.typeEchange === 'ECHANGE' ? 'Échange' : 'Prêt gratuit';
 
     const slugify = (text) => text.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 

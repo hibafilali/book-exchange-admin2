@@ -415,32 +415,36 @@
    APPOINTMENT CARDS IN CHAT
    ============================ */
 .appointmentCardMsg {
-    width: 280px; background: white; border-radius: 16px; overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+    width: 280px; background: white; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 4px 20px -4px rgba(0,0,0,0.1); border: 1px solid var(--border-color);
 }
 .apHeader {
-    background: #f0f9ff; padding: 0.75rem 1rem; border-bottom: 1px solid #bae6fd;
-    display: flex; align-items: center; gap: 0.6rem; font-size: 0.8rem; font-weight: 700; color: #0369a1;
+    background: #f8fafc; padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border-color);
+    display: flex; align-items: center; gap: 0.6rem; font-size: 0.75rem; font-weight: 700; color: var(--text-primary);
+    text-transform: uppercase; letter-spacing: 0.05em;
 }
-.apHeader svg { color: #0ea5e9; }
+.apHeader svg { color: var(--accent-color); }
 
-.apBody { padding: 1rem; }
-.apTargetBook { font-size: 0.9rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.6rem; }
-.apDetails { display: flex; flex-direction: column; gap: 0.4rem; }
-.apDetails span { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; }
-.apDetails svg { color: #94a3b8; }
+.apBody { padding: 1.1rem; }
+.apTargetBook { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem; }
+.apDetails { display: flex; flex-direction: column; gap: 0.5rem; }
+.apDetails span { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-secondary); }
+.apDetails svg { color: var(--text-muted); }
 
-.apFooter { padding: 0.75rem; background: #fdfdfd; border-top: 1px dashed var(--border-color); }
-.apStatusWaiting { font-size: 0.7rem; font-weight: 600; color: #94a3b8; font-style: italic; display: block; text-align: center; }
+.apFooter { padding: 1.1rem; background: #fff; border-top: 1px solid var(--border-color); }
+.apStatusInfo { display: inline-flex; padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+.apStatusWaiting { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); display: block; text-align: center; }
 
-.apActions { display: flex; gap: 0.5rem; }
+.apActions { display: flex; gap: 0.6rem; }
 .btnConfirmAp { 
-    flex: 2; padding: 0.5rem; background: var(--accent-color); color: white; 
-    border: none; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; 
+    flex: 1; padding: 0.6rem; background: var(--accent-color); color: white; 
+    border: none; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    transition: all 0.2s;
 }
+.btnConfirmAp:hover { background: var(--accent-hover); }
 .btnRefuseAp { 
-    flex: 1; padding: 0.5rem; background: #fee2e2; color: #991b1b; 
-    border: none; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; 
+    flex: 1; padding: 0.6rem; background: #fff; color: var(--text-secondary); 
+    border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; 
 }
 
 /* Position adjustment for bubbles */
@@ -451,21 +455,24 @@
    TRANSACTION PROPOSAL CARDS
    ============================ */
 .transactionCardMsg {
-    width: 300px; background: white; border-radius: 16px; overflow: hidden;
-    box-shadow: 0 8px 25px rgba(255, 69, 0, 0.15); border: 2px solid var(--accent-color);
+    width: 320px; background: white; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1); border: 1px solid var(--border-color);
 }
 .trHeader {
-    background: #fff7ed; padding: 0.75rem 1rem; border-bottom: 1px solid #ffedd5;
-    display: flex; align-items: center; gap: 0.6rem; font-size: 0.8rem; font-weight: 800; color: #9a3412;
+    background: #f8fafc; padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border-color);
+    display: flex; align-items: center; gap: 0.6rem; font-size: 0.75rem; font-weight: 700; color: var(--text-primary);
+    text-transform: uppercase; letter-spacing: 0.05em;
 }
 .trHeader svg { color: var(--accent-color); }
 
-.trBody { padding: 1rem; }
-.trTargetBook { font-size: 0.9rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.4rem; }
-.trPrice { font-size: 1.1rem; font-weight: 800; color: var(--accent-color); margin-bottom: 0.8rem; }
+.trBody { padding: 1.1rem; }
+.trTargetBook { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.2rem; }
+.trBookTitle { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem; }
+.trPrice { font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 1.1rem; }
 
-.trFooter { padding: 1rem; background: #fffaf0; border-top: 1px solid #ffedd5; }
-.trStatusWaiting { font-size: 0.75rem; font-weight: 700; color: #c2410c; display: block; text-align: center; line-height: 1.4; }
+.trFooter { padding: 1.1rem; background: #fff; border-top: 1px solid var(--border-color); }
+.trStatusInfo { display: inline-flex; padding: 0.35rem 0.85rem; border-radius: 6px; font-size: 0.85rem; font-weight: 700; }
+.trStatusWaiting { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); display: block; text-align: center; line-height: 1.5; }
 
 .btnCodActionInput {
     display: flex;

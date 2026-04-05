@@ -214,12 +214,6 @@ export default function Login() {
                             </div>
                         </div>
 
-                        <div className={styles.forgotPassword}>
-                            <button type="button" onClick={() => navigate('/forgot-password')}>
-                                Mot de passe oublié ?
-                            </button>
-                        </div>
-
                         <button
                             type="submit"
                             className={styles.submitBtn}

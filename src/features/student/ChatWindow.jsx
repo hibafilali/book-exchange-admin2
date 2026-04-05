@@ -381,9 +381,9 @@ export default function ChatWindow() {
                                                         </div>
                                                         <div className={styles.apFooter}>
                                                             {metadata.status === 'ACCEPTED' ? (
-                                                                <span className={styles.apStatusInfo} style={{ color: '#10b981', fontWeight: 800 }}>Accepté ✅</span>
+                                                                <span className={styles.apStatusInfo} style={{ background: '#ecfdf5', color: '#059669' }}>Rencontre acceptée</span>
                                                             ) : metadata.status === 'DECLINED' ? (
-                                                                <span className={styles.apStatusInfo} style={{ color: '#ef4444', fontWeight: 800 }}>Refusé ❌</span>
+                                                                <span className={styles.apStatusInfo} style={{ background: '#fef2f2', color: '#dc2626' }}>Rencontre déclinée</span>
                                                             ) : isMe ? (
                                                                 <span className={styles.apStatusWaiting}>En attente de réponse...</span>
                                                             ) : (
@@ -397,12 +397,13 @@ export default function ChatWindow() {
                                                 ) : isTransaction && metadata ? (
                                                     <div className={`${styles.transactionCardMsg} ${isMe ? styles.trMe : styles.trThem}`}>
                                                         <div className={styles.trHeader}>
-                                                            <ShieldCheck size={18} />
-                                                            <span>ACHAT OFFICIEL (COD)</span>
+                                                            <ShieldCheck size={16} />
+                                                            <span>Transaction Officielle (COD)</span>
                                                         </div>
                                                         <div className={styles.trBody}>
-                                                            <p className={styles.trTargetBook}>💰 Proposition d'achat pour : <strong>{metadata.book_title || metadata.book}</strong></p>
-                                                            <p className={styles.trPrice}>Montant : {metadata.amount || selectedConversation.annonce_prix} DH</p>
+                                                            <div className={styles.trTargetBook}>PROPOSITION D'ACHAT POUR :</div>
+                                                            <div className={styles.trBookTitle}>{metadata.book_title || metadata.book}</div>
+                                                            <div className={styles.trPrice}>{metadata.amount || selectedConversation.annonce_prix} <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}>DH</span></div>
                                                             <div className={styles.apDetails}>
                                                                 <span><Calendar size={14} /> {new Date(metadata.meeting_date).toLocaleString()}</span>
                                                                 <span><MapPin size={14} /> {metadata.meeting_point}</span>
@@ -410,15 +411,15 @@ export default function ChatWindow() {
                                                         </div>
                                                         <div className={styles.trFooter}>
                                                             {msg.transaction_status === 'ACCEPTED' ? (
-                                                                <span className={styles.trStatusInfo} style={{ color: '#10b981', fontWeight: 800 }}>✅ Demande Acceptée !</span>
+                                                                <span className={styles.trStatusInfo} style={{ background: '#ecfdf5', color: '#059669' }}>Demande Acceptée</span>
                                                             ) : msg.transaction_status === 'MEETING_SCHEDULED' ? (
-                                                                <span className={styles.trStatusInfo} style={{ color: '#0284c7', fontWeight: 800 }}>📅 Programmée : Remise en cours</span>
+                                                                <span className={styles.trStatusInfo} style={{ background: '#f0f9ff', color: '#0284c7' }}>Rencontre Programmée</span>
                                                             ) : msg.transaction_status === 'COMPLETED' ? (
-                                                                <span className={styles.trStatusInfo} style={{ color: '#10b981', fontWeight: 800 }}>✅ Transaction Terminée avec succès !</span>
+                                                                <span className={styles.trStatusInfo} style={{ background: '#ecfdf5', color: '#059669' }}>Transaction Terminée</span>
                                                             ) : msg.transaction_status === 'CANCELLED' ? (
-                                                                <span className={styles.trStatusInfo} style={{ color: '#ef4444', fontWeight: 800 }}>❌ Transaction Annulée</span>
+                                                                <span className={styles.trStatusInfo} style={{ background: '#fef2f2', color: '#dc2626' }}>Transaction Annulée</span>
                                                             ) : isMe ? (
-                                                                <span className={styles.trStatusWaiting}>🔒 Demande en attente de validation officielle</span>
+                                                                <span className={styles.trStatusWaiting}>En attente de validation officielle</span>
                                                             ) : (
                                                                 <div className={styles.trActions}>
                                                                     <button className={styles.btnGoToDashboard} onClick={() => navigate('/student-dashboard/dashboard')}>

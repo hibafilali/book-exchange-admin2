@@ -16,10 +16,11 @@ export default function LiveFeed() {
                 const dynamicActivities = books.map((b, i) => {
                     const isDon = b.typeEchange === 'DON';
                     const isVente = b.typeEchange === 'VENTE';
+                    const isEchange = b.typeEchange === 'ECHANGE';
                     const Icon = isDon ? Gift : (isVente ? BookUp : ArrowRightLeft);
-                    const colorClass = isDon ? styles.actionSuccess : (isVente ? styles.actionBrand : styles.actionBlue);
-                    const bgIcon = isDon ? 'rgba(16, 185, 129, 0.08)' : (isVente ? 'rgba(255, 87, 34, 0.08)' : 'rgba(59, 130, 246, 0.08)');
-                    const titlePrefix = isDon ? 'Don' : (isVente ? 'Vente' : 'Échange');
+                    const colorClass = isDon ? styles.actionSuccess : (isVente ? styles.actionBrand : (isEchange ? styles.actionPurple : styles.actionBlue));
+                    const bgIcon = isDon ? 'rgba(16, 185, 129, 0.08)' : (isVente ? 'rgba(255, 87, 34, 0.08)' : (isEchange ? 'rgba(139, 92, 246, 0.08)' : 'rgba(59, 130, 246, 0.08)'));
+                    const titlePrefix = isDon ? 'Don' : (isVente ? 'Vente' : (isEchange ? 'Échange' : 'Prêt'));
                     
                     return {
                         id: b.id,

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { useFavorites } from '../../context/FavoritesContext';
-import { bookApi, dashboardApi, transactionApi } from '../../api/client';
+import { bookApi, dashboardApi, transactionApi, userApi } from '../../api/client';
 import ManualCard from './ManualCard';
 import { getFullImageUrl } from '../../utils/imageHandler';
 import PlatformRatingModal from './PlatformRatingModal';
@@ -91,11 +91,22 @@ export default function StudentDashboard() {
 
     const handleAvatarClick = () => fileInputRef.current?.click();
     
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const file = e.target.files?.[0];
         if (file) {
-            const url = URL.createObjectURL(file);
-            updateAvatar(url);
+            try {
+                const formData = new FormData();
+                formData.append('avatar', file);
+                
+                const response = await userApi.uploadAvatar(formData);
+                const newAvatarUrl = response.data.avatarUrl;
+                
+                updateAvatar(newAvatarUrl);
+                toast.success('Photo de profil mise à jour !');
+            } catch (error) {
+                toast.error('Erreur lors de l\'envoi de la photo');
+                console.error(error);
+            }
         }
     };
 
@@ -164,6 +175,19 @@ export default function StudentDashboard() {
         }
     };
 
+    const handleDeleteAnnonce = async (id) => {
+        if (!window.confirm('Voulez-vous vraiment archiver cette annonce ? Elle ne sera plus visible par les autres étudiants.')) return;
+        
+        try {
+            await bookApi.delete(id);
+            toast.success('Annonce archivée avec succès');
+            await fetchDashboardData();
+        } catch (error) {
+            toast.error('Erreur lors de l\'archivage');
+            console.error(error);
+        }
+    };
+
     const getTransactionStatusLabel = (status) => {
         switch (status) {
             case 'PENDING': return { label: 'En attente', color: '#f59e0b' };
@@ -205,7 +229,7 @@ export default function StudentDashboard() {
                             />
                             <div className={styles.avatarContainer} onClick={handleAvatarClick} title="Changer ma photo">
                                 <img 
-                                    src={user?.avatar || 'https://i.pravatar.cc/120?u=hiba'} 
+                                    src={user?.avatar} 
                                     className={styles.profileImg} 
                                     alt="Profil" 
                                 />
@@ -305,8 +329,8 @@ export default function StudentDashboard() {
                                                         <div className={styles.listingInfo}>
                                                             <h3>{listing.exemplaire?.ouvrage?.titre || 'Annonce générique'}</h3>
                                                             <div className={styles.listingMeta}>
-                                                                <span className={styles.typeBadge} style={{ backgroundColor: listing.typeEchange === 'VENTE' ? '#F97316' : listing.typeEchange === 'PRET' ? '#06B6D4' : '#10B981' }}>{listing.typeEchange}</span>
-                                                                <span className={styles.priceText}>{listing.typeEchange === 'VENTE' ? `${listing.prixVente} DH` : listing.typeEchange === 'DON' ? 'Gratuit' : 'Prêt'}</span>
+                                                                <span className={styles.typeBadge} style={{ backgroundColor: listing.typeEchange === 'VENTE' ? '#F97316' : listing.typeEchange === 'PRET' ? '#06B6D4' : listing.typeEchange === 'DON' ? '#10B981' : '#8B5CF6' }}>{listing.typeEchange}</span>
+                                                                <span className={styles.priceText}>{listing.typeEchange === 'VENTE' ? `${listing.prixVente} DH` : listing.typeEchange === 'ECHANGE' ? 'Échange' : listing.typeEchange === 'DON' ? 'Gratuit' : 'Prêt'}</span>
                                                             </div>
                                                         </div>
                                                         <div className={styles.invMeta}>
@@ -324,7 +348,13 @@ export default function StudentDashboard() {
                                                         )}
                                                         <div className={styles.actionIcons}>
                                                             <button className={styles.btnActionIcon} title="Modifier"><Edit2 size={16} /></button>
-                                                            <button className={styles.btnActionIconDanger} title="Archiver"><Trash2 size={16} /></button>
+                                                            <button 
+                                                                className={styles.btnActionIconDanger} 
+                                                                title="Archiver"
+                                                                onClick={() => handleDeleteAnnonce(listing.id)}
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>

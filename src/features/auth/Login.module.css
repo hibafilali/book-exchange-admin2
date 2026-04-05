@@ -251,28 +251,6 @@
     margin-top: 0.5rem;
 }
 
-.forgotPassword {
-    text-align: right;
-    margin-top: -0.25rem;
-    margin-bottom: 0.5rem;
-}
-
-.forgotPassword button {
-    background: none;
-    border: none;
-    color: #475569;
-    font-size: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 0;
-    transition: all 0.2s ease;
-}
-
-.forgotPassword button:hover {
-    color: #FF5722;
-    text-decoration: underline;
-}
-
 .submitBtn:hover:not(:disabled) {
     transform: translateY(-2px);
     filter: brightness(1.1);

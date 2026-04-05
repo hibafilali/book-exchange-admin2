@@ -24,7 +24,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const ETATS = ['NEUF', 'BON', 'ACCEPTABLE', 'USE'];
-const TYPES = ['VENTE', 'PRET', 'DON'];
+const TYPES = ['VENTE', 'PRET', 'DON', 'ECHANGE'];
 const SORT_OPTIONS = [
     { value: 'recent', label: 'Plus récents' },
     { value: 'price_asc', label: 'Prix croissant' },
@@ -57,7 +57,8 @@ function SkeletonCard() {
 function ListItem({ annonce, onClick }) {
     const priceLabel = !annonce.id ? 'Bibliothèque'
         : annonce.typeEchange === 'VENTE' ? `${annonce.prixVente} DH`
-        : annonce.typeEchange === 'DON' ? 'Gratuit' : 'Prêt';
+        : annonce.typeEchange === 'DON' ? 'Gratuit' 
+        : annonce.typeEchange === 'ECHANGE' ? 'Échange' : 'Prêt';
     return (
         <motion.div className={styles.listItem} onClick={onClick}
             initial={{ opacity: 0, x: -15 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
@@ -123,7 +124,7 @@ function MapView({ results }) {
                                     <img src={getFullImageUrl(b.exemplaire?.photoUrl || b.photoUrl)} alt="" className={styles.popupImg} />
                                     <div className={styles.popupDetails}>
                                         <strong>{b.exemplaire?.ouvrage?.titre}</strong>
-                                        <p>{b.typeEchange === 'VENTE' ? `${b.prixVente} DH` : TYPE_LABELS[b.typeEchange]}</p>
+                                        <p>{b.typeEchange === 'VENTE' ? `${b.prixVente} DH` : b.typeEchange === 'ECHANGE' ? 'Échange' : TYPE_LABELS[b.typeEchange]}</p>
                                         <span>📍 Campus {b.exemplaire?.proprietaire?.ville}</span>
                                     </div>
                                 </div>

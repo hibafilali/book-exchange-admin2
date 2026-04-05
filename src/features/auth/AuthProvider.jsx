@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AuthContext } from './AuthContext';
 import { authApi } from '../../api/client';
+import { getFullImageUrl } from '../../utils/imageHandler';
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
@@ -14,13 +15,14 @@ export function AuthProvider({ children }) {
                     const response = await authApi.getMe();
                     const userData = response.data;
                     const normalizedRole = userData.role === 'ETUDIANT' ? 'STUDENT' : userData.role;
+                    const name = userData.nom || userData.prenom || 'Étudiant';
                     
                     setUser({
                         ...userData,
                         id: userData.id,
                         role: normalizedRole,
-                        name: userData.nom,
-                        avatar: userData.avatarUrl || `https://ui-avatars.com/api/?name=${userData.nom}&background=random`
+                        name: name,
+                        avatar: getFullImageUrl(userData.avatarUrl) || `https://ui-avatars.com/api/?name=${name}&background=random`
                     });
                 } catch (error) {
                     console.error('Verify token error:', error);
@@ -33,8 +35,10 @@ export function AuthProvider({ children }) {
     }, []);
 
     const updateAvatar = (newAvatarUrl) => {
-        localStorage.setItem('user_avatar', newAvatarUrl);
-        setUser(prev => prev ? { ...prev, avatar: newAvatarUrl } : null);
+        // Enregistre l'URL complète dans le state
+        const fullUrl = getFullImageUrl(newAvatarUrl);
+        localStorage.setItem('user_avatar', fullUrl);
+        setUser(prev => prev ? { ...prev, avatar: fullUrl } : null);
     };
 
     const updateName = (newName) => {
@@ -51,11 +55,12 @@ export function AuthProvider({ children }) {
             localStorage.setItem('user_role', userData.role);
             
             const normalizedRole = userData.role === 'ETUDIANT' ? 'STUDENT' : userData.role;
+            const name = userData.nom || userData.prenom || 'Étudiant';
             const userObj = {
                 ...userData,
                 role: normalizedRole,
-                name: userData.nom,
-                avatar: userData.avatar || `https://ui-avatars.com/api/?name=${userData.nom}&background=random`
+                name: name,
+                avatar: getFullImageUrl(userData.avatarUrl || userData.avatar) || `https://ui-avatars.com/api/?name=${name}&background=random`
             };
             
             setUser(userObj);
@@ -75,11 +80,12 @@ export function AuthProvider({ children }) {
             localStorage.setItem('user_role', userData.role);
             
             const normalizedRole = userData.role === 'ETUDIANT' ? 'STUDENT' : userData.role;
+            const name = userData.nom || userData.prenom || 'Étudiant';
             const userObj = {
                 ...userData,
                 role: normalizedRole,
-                name: userData.nom,
-                avatar: userData.avatarUrl || `https://ui-avatars.com/api/?name=${userData.nom}&background=random`
+                name: name,
+                avatar: getFullImageUrl(userData.avatarUrl) || `https://ui-avatars.com/api/?name=${name}&background=random`
             };
             
             setUser(userObj);

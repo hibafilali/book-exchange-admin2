@@ -412,5 +412,5 @@ export const CATEGORIES = [
 export const ETATS = ['NEUF', 'BON', 'ACCEPTABLE', 'USE'];
 export const ETAT_LABELS = { NEUF: 'Neuf', BON: 'Bon état', ACCEPTABLE: 'Acceptable', USE: 'Usé' };
 export const ETAT_COLORS = { NEUF: '#10b981', BON: '#3b82f6', ACCEPTABLE: '#f59e0b', USE: '#64748b' };
-export const TYPE_LABELS = { VENTE: 'Vente', PRET: 'Prêt', DON: 'Don' };
-export const TYPE_COLORS = { VENTE: '#F97316', PRET: '#06B6D4', DON: '#10B981' };
+export const TYPE_LABELS = { VENTE: 'Vente', PRET: 'Prêt', DON: 'Don', ECHANGE: 'Échange' };
+export const TYPE_COLORS = { VENTE: '#F97316', PRET: '#06B6D4', DON: '#10B981', ECHANGE: '#8b5cf6' };

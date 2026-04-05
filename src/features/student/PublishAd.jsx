@@ -22,8 +22,8 @@ const STEPS = [
 
 const ETATS = ['NEUF', 'BON', 'ACCEPTABLE', 'USE'];
 const ETAT_LABELS = { NEUF: 'Neuf', BON: 'Bon état', ACCEPTABLE: 'Acceptable', USE: 'Usé' };
-const TYPES = ['VENTE', 'PRET', 'DON'];
-const TYPE_LABELS = { VENTE: 'Vente', PRET: 'Prêt', DON: 'Don' };
+const TYPES = ['VENTE', 'PRET', 'DON', 'ECHANGE'];
+const TYPE_LABELS = { VENTE: 'Vente', PRET: 'Prêt', DON: 'Don', ECHANGE: 'Échange' };
 
 const MOCK_ISBN_DB = {
     '978-0262033848': { titre: 'Algorithmes et Structures de Données', auteur: 'Thomas H. Cormen', filiere: 'Informatique', niveau: 'L3' },

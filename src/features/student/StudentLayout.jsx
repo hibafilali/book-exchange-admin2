@@ -225,10 +225,10 @@ export default function StudentLayout() {
                             <button className={styles.avatarBtn} onClick={() => { setShowProfile(!showProfile); setShowNotifMenu(false); }}>
                                 <div className={styles.avatar}>
                                     <img 
-                                        src={user?.avatarUrl || user?.avatar || `https://ui-avatars.com/api/?name=${user?.nom || user?.name || 'Etudiant'}&background=random`} 
+                                        src={user?.avatar} 
                                         alt="Profil" 
                                         className={styles.avatarImg}
-                                        onError={(e) => { e.target.onerror = null; e.target.src = "https://ui-avatars.com/api/?name=User&background=random"; }}
+                                        onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`; }}
                                     />
                                 </div>
                             </button>
