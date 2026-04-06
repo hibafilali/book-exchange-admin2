@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     TrendingUp, Leaf, BookHeart, Plus, Edit2, Trash2, CheckCircle,
@@ -29,6 +29,7 @@ export default function StudentDashboard() {
     const { user, updateAvatar, updateName } = useAuth();
     const { favoritedIds } = useFavorites();
     const navigate = useNavigate();
+    const location = useLocation();
     const isProcessingRef = useRef(new Set());
     
     const [allBooks, setAllBooks] = useState([]);
@@ -76,7 +77,29 @@ export default function StudentDashboard() {
 
     useEffect(() => {
         fetchDashboardData();
-    }, []);
+        
+        // Handle tab from URL
+        const params = new URLSearchParams(location.search);
+        const tab = params.get('tab');
+        if (tab === 'sales' || tab === 'purchases') {
+            setActiveTransactionTab(tab);
+            // Scroll to the Mes Transactions section
+            setTimeout(() => {
+                const element = document.getElementById('mes-transactions');
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, 500);
+        } else if (tab === 'actions') {
+            // Scroll to Actions Requises
+            setTimeout(() => {
+                const element = document.getElementById('actions-requises');
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, 500);
+        }
+    }, [location.search]);
 
     const favoritedBooks = allBooks.filter(b => favoritedIds.includes(b.id));
 
@@ -188,15 +211,19 @@ export default function StudentDashboard() {
         }
     };
 
-    const getTransactionStatusLabel = (status) => {
+    const getTransactionStatusLabel = (status, type) => {
+        let label = '';
+        let color = '#64748b';
+
         switch (status) {
-            case 'PENDING': return { label: 'En attente', color: '#f59e0b' };
-            case 'ACCEPTED': return { label: 'Acceptée', color: '#3b82f6' };
-            case 'MEETING_SCHEDULED': return { label: 'Rendez-vous fixé', color: '#8b5cf6' };
-            case 'COMPLETED': return { label: 'Terminée', color: '#10b981' };
-            case 'CANCELLED': return { label: 'Annulée', color: '#ef4444' };
-            default: return { label: status, color: '#64748b' };
+            case 'PENDING': label = type === 'ECHANGE' ? 'Échange en attente' : 'Achat en attente'; color = '#f59e0b'; break;
+            case 'ACCEPTED': label = 'Acceptée'; color = '#3b82f6'; break;
+            case 'MEETING_SCHEDULED': label = 'Rendez-vous fixé'; color = '#8b5cf6'; break;
+            case 'COMPLETED': label = 'Terminée'; color = '#10b981'; break;
+            case 'CANCELLED': label = 'Annulée'; color = '#ef4444'; break;
+            default: label = status;
         }
+        return { label, color };
     };
 
     // Framer Motion variants
@@ -347,7 +374,13 @@ export default function StudentDashboard() {
                                                             <button className={styles.btnActionSub}>Promouvoir (Boost)</button>
                                                         )}
                                                         <div className={styles.actionIcons}>
-                                                            <button className={styles.btnActionIcon} title="Modifier"><Edit2 size={16} /></button>
+                                                            <button 
+                                                                className={styles.btnActionIcon} 
+                                                                title="Modifier"
+                                                                onClick={() => navigate(`/student-dashboard/edit/${listing.id}`)}
+                                                            >
+                                                                <Edit2 size={16} />
+                                                            </button>
                                                             <button 
                                                                 className={styles.btnActionIconDanger} 
                                                                 title="Archiver"
@@ -389,7 +422,7 @@ export default function StudentDashboard() {
                             </motion.div>
 
                             {/* Mes Transactions COD */}
-                            <motion.div className={styles.panel} variants={itemVariants}>
+                            <motion.div className={styles.panel} variants={itemVariants} id="mes-transactions">
                                 <div className={styles.panelHeader}>
                                     <div className={styles.panelTitleGroup}>
                                         <h2>Mes Transactions (COD)</h2>
@@ -435,10 +468,10 @@ export default function StudentDashboard() {
                                                         <div className={styles.tInfo}>
                                                             <h4>{t.ouvrage_titre}</h4>
                                                             <div className={styles.tMeta}>
-                                                                <span className={styles.tStatus} style={{ '--status-color': getTransactionStatusLabel(t.status).color }}>
-                                                                    {getTransactionStatusLabel(t.status).label}
+                                                                <span className={styles.tStatus} style={{ '--status-color': getTransactionStatusLabel(t.status, t.type).color }}>
+                                                                    {getTransactionStatusLabel(t.status, t.type).label}
                                                                 </span>
-                                                                <span className={styles.tPrice}>{t.amount} DH</span>
+                                                                <span className={styles.tPrice}>{t.type === 'ECHANGE' ? 'Échange' : `${t.amount} DH`}</span>
                                                             </div>
                                                             {t.status === 'MEETING_SCHEDULED' && (
                                                                 <div className={styles.meetingInfo}>
@@ -491,10 +524,10 @@ export default function StudentDashboard() {
                                                             <h4>{t.ouvrage_titre}</h4>
                                                             <p className={styles.buyerName}>Acheteur: {t.buyer_name}</p>
                                                             <div className={styles.tMeta}>
-                                                                <span className={styles.tStatus} style={{ '--status-color': getTransactionStatusLabel(t.status).color }}>
-                                                                    {getTransactionStatusLabel(t.status).label}
+                                                                <span className={styles.tStatus} style={{ '--status-color': getTransactionStatusLabel(t.status, t.type).color }}>
+                                                                    {getTransactionStatusLabel(t.status, t.type).label}
                                                                 </span>
-                                                                <span className={styles.tPrice}>{t.amount} DH</span>
+                                                                <span className={styles.tPrice}>{t.type === 'ECHANGE' ? 'Échange' : `${t.amount} DH`}</span>
                                                             </div>
                                                         </div>
                                                         <div className={styles.tActions}>
@@ -537,7 +570,7 @@ export default function StudentDashboard() {
 
                         {/* === COLONNE DROITE (35%) === */}
                         <div className={styles.rightCol}>
-                            <motion.div className={styles.panelAction} variants={itemVariants}>
+                            <motion.div className={styles.panelAction} variants={itemVariants} id="actions-requises">
                                 <div className={styles.panelActionHeader}>
                                     <h2>Actions Requises</h2>
                                     <span className={styles.pulseDot}></span>
@@ -549,7 +582,11 @@ export default function StudentDashboard() {
                                                 <div className={styles.actionAvatar}>{act.avatar}</div>
                                                 <div className={styles.actionText}>
                                                     {act.type === 'COD_REQUEST' ? (
-                                                        <p><strong>{act.avec}</strong> souhaite acheter <em>{act.livre}</em></p>
+                                                        <p><strong>{act.avec}</strong> souhaite {
+                                                            act.transType === 'PRET' ? 'emprunter' :
+                                                            act.transType === 'ECHANGE' ? 'échanger' :
+                                                            act.transType === 'DON' ? 'recevoir' : 'acheter'
+                                                        } <em>{act.livre}</em></p>
                                                     ) : (
                                                         <p><strong>{act.avec}</strong> a demandé <em>{act.livre}</em></p>
                                                     )}

@@ -107,6 +107,21 @@ class AnnonceController {
         }
     }
 
+    async update(req, res) {
+        try {
+            const { id } = req.params;
+            const userId = req.user.id;
+            const data = req.body;
+            
+            await annonceService.updateAnnonce(id, data, userId);
+            res.json({ message: 'Annonce mise à jour et envoyée en modération' });
+        } catch (error) {
+            const code = error.message === 'Annonce not found' ? 404 : 
+                         error.message === 'Unauthorized to update this advertisement' ? 403 : 500;
+            res.status(code).json({ error: error.message });
+        }
+    }
+
     async delete(req, res) {
         try {
             const { id } = req.params;

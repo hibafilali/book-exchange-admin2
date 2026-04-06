@@ -25,6 +25,7 @@ export const bookApi = {
         // If data is FormData, axios handles the Content-Type automatically
         return api.post('/annonces', data);
     },
+    update: (id, data) => api.put(`/annonces/${id}`, data),
     updateStatus: (id, status) => api.put(`/annonces/${id}/status`, { status }),
     delete: (id) => api.delete(`/annonces/${id}`)
 };
@@ -68,6 +69,9 @@ export const conversationApi = {
     getConversations: () => api.get('/conversations'),
     getMessages: (id) => api.get(`/conversations/${id}/messages`),
     sendMessage: (id, data) => api.post(`/conversations/${id}/messages`, data),
+    sendImage: (id, formData) => api.post(`/conversations/${id}/messages/image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
     updateMessage: (messageId, data) => api.patch(`/conversations/messages/${messageId}`, data),
     startConversation: (recepteurId, annonceId) => api.post('/conversations/start', { recepteurId, annonceId })
 };

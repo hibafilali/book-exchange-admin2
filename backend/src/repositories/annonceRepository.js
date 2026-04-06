@@ -94,6 +94,30 @@ class AnnonceRepository {
         return true;
     }
 
+    async update(id, data) {
+        // Update the announcement record
+        const query = `
+            UPDATE annonces 
+            SET typeEchange = ?, prixVente = ?, description = ?, status = 'ATTENTE' 
+            WHERE id = ?
+        `;
+        const params = [
+            data.typeEchange,
+            data.prixVente || 0,
+            data.description || '',
+            id
+        ];
+        
+        await pool.query(query, params);
+
+        // Also update the associated exemplaire's etat if provided
+        if (data.etat && data.exemplaireId) {
+            await pool.query('UPDATE exemplaires SET etat = ? WHERE id = ?', [data.etat, data.exemplaireId]);
+        }
+
+        return true;
+    }
+
     async getMaxPrice() {
         const [rows] = await pool.query('SELECT MAX(prixVente) as maxPrice FROM annonces');
         return parseFloat(rows[0]?.maxPrice) || 0;

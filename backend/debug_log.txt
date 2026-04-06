@@ -46,3 +46,45 @@ SyntaxError: Expected property name or '}' in JSON at position 1
     at IncomingMessage.emit (node:events:524:28)
     at endReadableNT (node:internal/streams/readable:1698:12)
     at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+[2026-04-06T02:00:58.709Z] GLOBAL ERROR: Images uniquement (jpg, jpeg, png, webp) !
+Error: Images uniquement (jpg, jpeg, png, webp) !
+    at fileFilter (file:///C:/Users/PC/Documents/book-exchange-admin-main/backend/src/middlewares/upload.js:40:12)
+    at wrappedFileFilter (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\multer\index.js:44:7)
+    at Multipart.<anonymous> (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\multer\lib\make-middleware.js:109:7)
+    at Multipart.emit (node:events:524:28)
+    at HeaderParser.cb (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:358:14)
+    at HeaderParser.push (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:162:20)
+    at SBMH.ssCb [as _cb] (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:394:37)
+    at feed (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\streamsearch\lib\sbmh.js:219:14)
+    at SBMH.push (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\streamsearch\lib\sbmh.js:104:16)
+    at Multipart._write (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:567:19)
+[2026-04-06T02:01:08.035Z] GLOBAL ERROR: Images uniquement (jpg, jpeg, png, webp) !
+Error: Images uniquement (jpg, jpeg, png, webp) !
+    at fileFilter (file:///C:/Users/PC/Documents/book-exchange-admin-main/backend/src/middlewares/upload.js:40:12)
+    at wrappedFileFilter (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\multer\index.js:44:7)
+    at Multipart.<anonymous> (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\multer\lib\make-middleware.js:109:7)
+    at Multipart.emit (node:events:524:28)
+    at HeaderParser.cb (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:358:14)
+    at HeaderParser.push (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:162:20)
+    at SBMH.ssCb [as _cb] (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:394:37)
+    at feed (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\streamsearch\lib\sbmh.js:219:14)
+    at SBMH.push (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\streamsearch\lib\sbmh.js:104:16)
+    at Multipart._write (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:567:19)
+[2026-04-06T02:01:20.467Z] GLOBAL ERROR: Images uniquement (jpg, jpeg, png, webp) !
+Error: Images uniquement (jpg, jpeg, png, webp) !
+    at fileFilter (file:///C:/Users/PC/Documents/book-exchange-admin-main/backend/src/middlewares/upload.js:40:12)
+    at wrappedFileFilter (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\multer\index.js:44:7)
+    at Multipart.<anonymous> (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\multer\lib\make-middleware.js:109:7)
+    at Multipart.emit (node:events:524:28)
+    at HeaderParser.cb (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:358:14)
+    at HeaderParser.push (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:162:20)
+    at SBMH.ssCb [as _cb] (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:394:37)
+    at feed (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\streamsearch\lib\sbmh.js:219:14)
+    at SBMH.push (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\streamsearch\lib\sbmh.js:104:16)
+    at Multipart._write (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\busboy\lib\types\multipart.js:567:19)
+[2026-04-06T02:11:23.511Z] COMPLETE ERROR ID 36: Data truncated for column 'status' at row 1
+Error: Data truncated for column 'status' at row 1
+    at PromisePoolConnection.query (C:\Users\PC\Documents\book-exchange-admin-main\backend\node_modules\mysql2\lib\promise\connection.js:29:22)
+    at TransactionService.completeTransaction (file:///C:/Users/PC/Documents/book-exchange-admin-main/backend/src/services/transactionService.js:162:34)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async complete (file:///C:/Users/PC/Documents/book-exchange-admin-main/backend/src/controllers/transactionController.js:71:13)

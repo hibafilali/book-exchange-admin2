@@ -252,11 +252,13 @@
 /* Emprunts */
 .emprunt { display: flex; gap: .55rem; align-items: center; padding: .3rem 0; }
 .emprunt + .emprunt { border-top: 1px solid rgba(0,0,0,.03); padding-top: .4rem; }
-.emprunt img { width: 32px; height: 44px; object-fit: contain; border-radius: 3px; background: #f8fafc; flex-shrink: 0; }
-.empruntName { font-size: .72rem; font-weight: 700; color: var(--text-primary); display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
-.empruntTag { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
-.urgent { color: #d97706; }
-.ok { color: #059669; }
+.emprunt img { width: 32px; height: 44px; object-fit: contain; border-radius: 4px; background: #f8fafc; flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.empruntName { font-size: .74rem; font-weight: 700; color: var(--text-primary); display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: .05rem; }
+.empruntMeta { display: flex; flex-direction: column; gap: .05rem; }
+.empruntMeta small { font-size: .62rem; color: var(--text-muted); font-weight: 500; }
+.empruntTag { font-size: .58rem; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; display: inline-block; margin-top: .15rem; }
+.urgent { color: #ef4444; }
+.ok { color: #10b981; }
 
 /* Leaderboard Podium */
 .podium { display: flex; gap: .4rem; justify-content: center; align-items: flex-end; padding: .2rem 0; }

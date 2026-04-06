@@ -1,12 +1,13 @@
 import pool from '../config/db.js';
 
 class NotificationRepository {
-    async create(userId, titre, message, type) {
+    async create(userId, titre, message, type, targetUrl = null) {
+        console.log(`[NotificationRepository] Creating notif for ${userId}: ${titre}, targetUrl: ${targetUrl}`);
         const query = `
-            INSERT INTO notifications (user_id, titre, message, type, is_read) 
-            VALUES (?, ?, ?, ?, false)
+            INSERT INTO notifications (user_id, titre, message, type, is_read, target_url) 
+            VALUES (?, ?, ?, ?, false, ?)
         `;
-        const [result] = await pool.query(query, [userId, titre, message, type]);
+        const [result] = await pool.query(query, [userId, titre, message, type, targetUrl]);
         return result.insertId;
     }
 

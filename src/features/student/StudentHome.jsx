@@ -24,6 +24,7 @@ export default function StudentHome() {
     const [sidebarData, setSidebarData] = useState({ 
         stats: null, 
         emprunts: [], 
+        prets: [], 
         leaderboard: [], 
         activities: [] 
     });
@@ -54,13 +55,28 @@ export default function StudentHome() {
         fetchData();
     }, []);
 
-    const getRemainingDays = (dateStr) => {
-        const diff = new Date(dateStr) - new Date();
-        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-        if (days < 0) return 'En retard';
-        if (days === 0) return 'À rendre aujourd\'hui';
-        if (days === 1) return 'À rendre demain';
-        return `À rendre dans ${days} jours`;
+    const getLoanDurationInfo = (empruntDate, returnDate) => {
+        const now = new Date();
+        const start = new Date(empruntDate);
+        const end = new Date(returnDate);
+
+        // Elapsed
+        const elapsedDiff = now - start;
+        const elapsedDays = Math.floor(elapsedDiff / (1000 * 60 * 60 * 24));
+        
+        // Remaining
+        const remainingDiff = end - now;
+        const remainingDays = Math.ceil(remainingDiff / (1000 * 60 * 60 * 24));
+
+        let elapsedStr = `${elapsedDays}j écoulés`;
+        if (elapsedDays === 0) elapsedStr = "Débuté aujourd'hui";
+
+        let remainingStr = `${remainingDays}j restants`;
+        if (remainingDays < 0) remainingStr = "En retard";
+        else if (remainingDays === 0) remainingStr = "À rendre aujourd'hui";
+        else if (remainingDays === 1) remainingStr = "À rendre demain";
+
+        return { elapsedStr, remainingStr, isUrgent: remainingDays < 3, isOverdue: remainingDays < 0 };
     };
 
     const getRelativeTime = (dateStr) => {
@@ -258,24 +274,56 @@ export default function StudentHome() {
                             <button className={styles.alertBtn}>Vendre mes livres</button>
                         </motion.div>
 
-                        {/* Emprunts */}
+                        {/* Mes Emprunts (Books I borrowed) */}
                         <div className={styles.box}>
-                            <h3 className={styles.boxTitle}><Clock size={14} style={{color:'#f59e0b'}}/> Emprunts en cours</h3>
+                            <h3 className={styles.boxTitle}><Clock size={14} style={{color:'#f59e0b'}}/> Mes Emprunts en cours</h3>
                             {isSidebarLoading ? (
                                 <div className={styles.loadingSmall}>Chargement...</div>
                             ) : sidebarData.emprunts.length === 0 ? (
                                 <div className={styles.emptySmall}>Aucun emprunt actif.</div>
-                            ) : sidebarData.emprunts.map(e => (
-                                <div key={e.id} className={styles.emprunt}>
-                                    <img src={getFullImageUrl(e.image)} alt="" />
-                                    <div>
-                                        <span className={styles.empruntName}>{e.titre}</span>
-                                        <span className={`${styles.empruntTag} ${new Date(e.date_retour) - new Date() < 86400000 * 3 ? styles.urgent : styles.ok}`}>
-                                            {getRemainingDays(e.date_retour)}
-                                        </span>
+                            ) : sidebarData.emprunts.map(e => {
+                                const info = getLoanDurationInfo(e.date_emprunt, e.date_retour);
+                                return (
+                                    <div key={e.id} className={styles.emprunt}>
+                                        <img src={getFullImageUrl(e.image)} alt="" />
+                                        <div>
+                                            <span className={styles.empruntName}>{e.titre}</span>
+                                            <div className={styles.empruntMeta}>
+                                                <small>{e.owner_name}</small>
+                                                <span className={`${styles.empruntTag} ${info.isUrgent ? styles.urgent : styles.ok}`}>
+                                                    {info.elapsedStr} • {info.remainingStr}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
+                        </div>
+
+                        {/* Mes Prêts (Books I lent to others) */}
+                        <div className={styles.box}>
+                            <h3 className={styles.boxTitle}><Send size={14} style={{color:'#3b82f6'}}/> Mes Prêts en cours</h3>
+                            {isSidebarLoading ? (
+                                <div className={styles.loadingSmall}>Chargement...</div>
+                            ) : sidebarData.prets.length === 0 ? (
+                                <div className={styles.emptySmall}>Aucun prêt actif.</div>
+                            ) : sidebarData.prets.map(p => {
+                                const info = getLoanDurationInfo(p.date_emprunt, p.date_retour);
+                                return (
+                                    <div key={p.id} className={styles.emprunt}>
+                                        <img src={getFullImageUrl(p.image)} alt="" />
+                                        <div>
+                                            <span className={styles.empruntName}>{p.titre}</span>
+                                            <div className={styles.empruntMeta}>
+                                                <small>Prêté à: {p.borrower_name}</small>
+                                                <span className={`${styles.empruntTag} ${info.isUrgent ? styles.urgent : styles.ok}`}>
+                                                    {info.elapsedStr} • {info.remainingStr}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
 
                         {/* Leaderboard */}

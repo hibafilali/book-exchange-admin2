@@ -129,6 +129,7 @@ function App() {
             <Route path="book/:id" element={<BookDetails />} />
             <Route path="search" element={<SearchExplorer />} />
             <Route path="publish" element={<PublishAd />} />
+            <Route path="edit/:id" element={<PublishAd />} />
             <Route path="dashboard" element={<StudentDashboard />} />
             <Route path="messages" element={<ChatWindow />} />
             <Route path="user/:id" element={<SellerProfile />} />

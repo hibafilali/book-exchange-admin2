@@ -2,12 +2,12 @@ import pool from '../config/db.js';
 
 class TransactionRepository {
     async create(data) {
-        const { annonce_id, buyer_id, seller_id, amount, status, payment_method, meeting_point, meeting_date } = data;
+        const { annonce_id, buyer_id, seller_id, type, amount, status, payment_method, meeting_point, meeting_date, return_date } = data;
         const [result] = await pool.query(
             `INSERT INTO transactions 
-            (annonce_id, buyer_id, seller_id, amount, status, payment_method, meeting_point, meeting_date) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [annonce_id, buyer_id, seller_id, amount, status, payment_method, meeting_point, meeting_date]
+            (annonce_id, buyer_id, seller_id, type, amount, status, payment_method, meeting_point, meeting_date, return_date) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [annonce_id, buyer_id, seller_id, type || 'ACHAT', amount, status, payment_method, meeting_point, meeting_date, return_date]
         );
         return { id: result.insertId, ...data };
     }

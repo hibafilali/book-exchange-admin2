@@ -17,7 +17,7 @@ class DashboardController {
 
             // 2. Actions Requises - mapped from pending transactions and unread notifications
             const [pendingTransactions] = await pool.query(`
-                SELECT t.id, 'COD_REQUEST' as type, u.nom as avec, o.titre as livre, t.created_at
+                SELECT t.id, 'COD_REQUEST' as type, t.type as trans_type, u.nom as avec, o.titre as livre, t.created_at
                 FROM transactions t
                 JOIN users u ON t.buyer_id = u.id
                 JOIN annonces a ON t.annonce_id = a.id
@@ -38,6 +38,7 @@ class DashboardController {
                 ...pendingTransactions.map(t => ({
                     id: `trans_${t.id}`,
                     type: 'COD_REQUEST',
+                    transType: t.trans_type,
                     livre: t.livre,
                     avec: t.avec,
                     avatar: t.avec.charAt(0),

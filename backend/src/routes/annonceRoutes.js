@@ -12,6 +12,7 @@ router.get('/my', authMiddleware, annonceController.getMy);
 router.get('/:id', annonceController.getById);
 router.post('/', authMiddleware, upload.array('photos', 5), annonceController.create);
 router.put('/:id/status', annonceController.updateStatus);
+router.put('/:id', authMiddleware, annonceController.update);
 router.delete('/:id', authMiddleware, annonceController.delete);
 
 export default router;

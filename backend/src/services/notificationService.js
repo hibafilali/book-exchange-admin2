@@ -2,12 +2,12 @@ import notificationRepository from '../repositories/notificationRepository.js';
 import userRepository from '../repositories/userRepository.js';
 
 class NotificationService {
-    async notifyAdmins(titre, message, type = 'INFO') {
+    async notifyAdmins(titre, message, type = 'INFO', targetUrl = null) {
         try {
             const admins = await userRepository.findByRole('ADMIN');
             
             const promises = admins.map(admin => 
-                notificationRepository.create(admin.id, titre, message, type)
+                notificationRepository.create(admin.id, titre, message, type, targetUrl)
             );
             
             await Promise.all(promises);

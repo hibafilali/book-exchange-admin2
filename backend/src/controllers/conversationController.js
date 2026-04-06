@@ -65,3 +65,27 @@ export const updateMessageStatus = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+export const sendImageMessage = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const senderId = req.user?.id || 1;
+        
+        if (!req.file) {
+            return res.status(400).json({ error: 'Aucune image fournie' });
+        }
+
+        const imageUrl = `/uploads/${req.file.filename}`;
+
+        await conversationRepository.createMessage({
+            conversationId: id,
+            senderId,
+            text: imageUrl,
+            type: 'IMAGE'
+        });
+        
+        res.json({ success: true, imageUrl });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};

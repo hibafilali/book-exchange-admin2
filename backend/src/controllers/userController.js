@@ -94,11 +94,23 @@ class UserController {
 
             // 2. Active Loans
             const [emprunts] = await pool.query(`
-                SELECT e.*, o.titre, ex.photoUrl
+                SELECT e.*, o.titre, ex.photoUrl, u.nom as owner_name, u.prenom as owner_prenom
                 FROM emprunts e
                 JOIN exemplaires ex ON e.exemplaire_id = ex.id
                 JOIN ouvrages o ON ex.ouvrage_id = o.id
+                JOIN users u ON ex.proprietaire_id = u.id
                 WHERE e.user_id = ? AND e.status = 'EN_COURS'
+                ORDER BY e.date_retour ASC
+            `, [userId]);
+
+            // 2.5 Books Lent (Prêts en cours - where user is the owner)
+            const [prets] = await pool.query(`
+                SELECT e.*, o.titre, ex.photoUrl, u.nom as borrower_name, u.prenom as borrower_prenom
+                FROM emprunts e
+                JOIN exemplaires ex ON e.exemplaire_id = ex.id
+                JOIN ouvrages o ON ex.ouvrage_id = o.id
+                JOIN users u ON e.user_id = u.id
+                WHERE ex.proprietaire_id = ? AND e.status = 'EN_COURS'
                 ORDER BY e.date_retour ASC
             `, [userId]);
 
@@ -134,8 +146,19 @@ class UserController {
                     id: e.id,
                     titre: e.titre,
                     image: e.photoUrl,
+                    date_emprunt: e.date_emprunt,
                     date_retour: e.date_retour,
+                    owner_name: `${e.owner_prenom || ''} ${e.owner_name || ''}`.trim(),
                     status: e.status
+                })),
+                prets: prets.map(p => ({
+                    id: p.id,
+                    titre: p.titre,
+                    image: p.photoUrl,
+                    date_emprunt: p.date_emprunt,
+                    date_retour: p.date_retour,
+                    borrower_name: `${p.borrower_prenom || ''} ${p.borrower_name || ''}`.trim(),
+                    status: p.status
                 })),
                 leaderboard: leaderboard.map((u, index) => ({
                     id: index + 1,

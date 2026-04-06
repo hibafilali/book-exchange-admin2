@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
     ArrowLeft, Heart, Share2, MapPin, GraduationCap, Building2,
     BookOpen, Hash, Layers, Send, X, Eye, ShieldCheck, Star,
-    ChevronLeft, ChevronRight, MessageCircle
+    ChevronLeft, ChevronRight, MessageCircle, Clock, Calendar
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { bookApi, conversationApi, transactionApi } from '../../api/client';
@@ -49,7 +49,7 @@ export default function BookDetails() {
     const [contactMsg, setContactMsg] = useState('');
     const [contactSent, setContactSent] = useState(false);
     const [showCodModal, setShowCodModal] = useState(false);
-    const [codData, setCodData] = useState({ meeting_point: '', meeting_date: '' });
+    const [codData, setCodData] = useState({ meeting_point: '', meeting_date: '', return_date: '' });
     const [isCodLoading, setIsCodLoading] = useState(false);
     const [isSendingContact, setIsSendingContact] = useState(false);
 
@@ -139,9 +139,10 @@ export default function BookDetails() {
             await transactionApi.create({
                 annonce_id: book.id,
                 seller_id: book.exemplaire.proprietaire.id,
-                amount: book.prixVente,
+                amount: book.typeEchange === 'VENTE' ? book.prixVente : 0,
                 meeting_point: codData.meeting_point,
-                meeting_date: codData.meeting_date
+                meeting_date: codData.meeting_date,
+                return_date: book.typeEchange === 'PRET' ? codData.return_date : null
             });
 
             toast.success('Demande d\'achat envoyée !');
@@ -274,6 +275,16 @@ export default function BookDetails() {
                                     <ShieldCheck size={18} /> Acheter (Espèces)
                                 </button>
                             )}
+                            {book.typeEchange === 'ECHANGE' && (
+                                <button className={styles.codBtn} onClick={() => setShowCodModal(true)}>
+                                    <Layers size={18} /> Échanger (Livres)
+                                </button>
+                            )}
+                            {book.typeEchange === 'PRET' && (
+                                <button className={styles.codBtn} onClick={() => setShowCodModal(true)} style={{ background: 'var(--gradient-pret)' }}>
+                                    <Clock size={18} /> Emprunter (Prêt)
+                                </button>
+                            )}
                         </div>
                     </motion.div>
                 </div>
@@ -332,9 +343,18 @@ export default function BookDetails() {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         transition={{ duration: 0.25 }}>
                         <button className={styles.modalClose} onClick={() => setShowCodModal(false)}><X size={20} /></button>
-                        <div className={styles.modalIcon} style={{ background: 'var(--gradient-vente)' }}><ShieldCheck size={28} /></div>
-                        <h3>Proposer un achat</h3>
-                        <p>Vous allez proposer un achat en espèces de <strong>{book.prixVente} DH</strong> pour "{book.exemplaire?.ouvrage?.titre}".</p>
+                        <div className={styles.modalIcon} style={{ background: book.typeEchange === 'ECHANGE' ? 'var(--gradient-echange)' : book.typeEchange === 'PRET' ? 'var(--gradient-pret)' : 'var(--gradient-vente)' }}>
+                            {book.typeEchange === 'ECHANGE' ? <Layers size={28} /> : book.typeEchange === 'PRET' ? <Clock size={28} /> : <ShieldCheck size={28} />}
+                        </div>
+                        <h3>{book.typeEchange === 'ECHANGE' ? 'Proposer un échange' : book.typeEchange === 'PRET' ? 'Proposer un emprunt' : 'Proposer un achat'}</h3>
+                        <p>
+                            {book.typeEchange === 'ECHANGE' 
+                                ? <>Vous allez proposer un échange pour "{book.exemplaire?.ouvrage?.titre}". Vous pourrez convenir des livres à échanger via le chat.</>
+                                : book.typeEchange === 'PRET'
+                                ? <>Vous allez proposer d'emprunter "{book.exemplaire?.ouvrage?.titre}". Veuillez suggérer une date de retour.</>
+                                : <>Vous allez proposer un achat en espèces de <strong>{book.prixVente} DH</strong> pour "{book.exemplaire?.ouvrage?.titre}".</>
+                            }
+                        </p>
 
                         <div className={styles.codForm}>
                             <div className={styles.inputGroup}>
@@ -343,12 +363,19 @@ export default function BookDetails() {
                                     value={codData.meeting_point} onChange={e => setCodData({ ...codData, meeting_point: e.target.value })} />
                             </div>
                             <div className={styles.inputGroup}>
-                                <label className={styles.inputLabel}><eye size={14} /> Date & Heure souhaitées</label>
+                                <label className={styles.inputLabel}><Clock size={14} /> Date & Heure du rendez-vous</label>
                                 <input type="datetime-local" className={styles.modalInput}
                                     value={codData.meeting_date} onChange={e => setCodData({ ...codData, meeting_date: e.target.value })} />
                             </div>
+                            {book.typeEchange === 'PRET' && (
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.inputLabel}><Calendar size={14} /> Date de retour prévue</label>
+                                    <input type="date" className={styles.modalInput}
+                                        value={codData.return_date} onChange={e => setCodData({ ...codData, return_date: e.target.value })} />
+                                </div>
+                            )}
                             <button className={styles.modalSend} onClick={handleInitiateCod} disabled={isCodLoading}>
-                                {isCodLoading ? 'Envoi...' : 'Envoyer la proposition'}
+                                {isCodLoading ? 'Envoi...' : (book.typeEchange === 'ECHANGE' ? 'Envoyer la proposition d\'échange' : book.typeEchange === 'PRET' ? 'Envoyer la proposition d\'emprunt' : 'Envoyer la proposition d\'achat')}
                             </button>
                             <p className={styles.disclaimer}>Le vendeur devra accepter votre proposition pour confirmer le rendez-vous.</p>
                         </div>

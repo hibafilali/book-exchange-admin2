@@ -11,7 +11,7 @@ import ManualCard from './ManualCard';
 import styles from './PublishAd.module.css';
 import { bookApi, exemplaireApi } from '../../api/client';
 import { getFullImageUrl } from '../../utils/imageHandler';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { useEffect } from 'react';
 
 const STEPS = [
@@ -33,6 +33,9 @@ const MOCK_ISBN_DB = {
 export default function PublishAd() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { id } = useParams();
+    const isEditMode = !!id;
+    
     const [step, setStep] = useState(1);
     const [isPublishing, setIsPublishing] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
@@ -54,14 +57,42 @@ export default function PublishAd() {
     });
 
     useEffect(() => {
-        const initFromLibrary = async () => {
+        const init = async () => {
             await fetchAvailableBooks();
-            if (location.state?.exemplaireId) {
-                handleSelectFromLibrary(location.state.exemplaireId, false); // false = stay on step 1
+            
+            if (isEditMode) {
+                try {
+                    setLibraryLoading(true);
+                    const { data } = await bookApi.getById(id);
+                    // Populate form
+                    setFormData({
+                        exemplaireId: data.exemplaire?.id || null,
+                        isbn: data.exemplaire?.ouvrage?.isbn || '',
+                        titre: data.exemplaire?.ouvrage?.titre || '',
+                        auteur: data.exemplaire?.ouvrage?.auteur || '',
+                        filiere: data.exemplaire?.ouvrage?.filiere || 'Informatique',
+                        niveau: data.exemplaire?.ouvrage?.niveau || 'L1',
+                        etat: data.exemplaire?.etat || 'BON',
+                        photos: [{ id: 'existing', url: data.exemplaire?.photoUrl, existing: true }],
+                        ville: data.exemplaire?.proprietaire?.ville || '',
+                        typeEchange: data.typeEchange,
+                        prixVente: data.prixVente,
+                        description: data.description,
+                        dureePret: '', // Parses from description if needed, but for now empty
+                        caution: ''
+                    });
+                    setStep(3); // Go straight to ad details
+                } catch (error) {
+                    toast.error("Erreur lors du chargement de l'annonce");
+                } finally {
+                    setLibraryLoading(false);
+                }
+            } else if (location.state?.exemplaireId) {
+                handleSelectFromLibrary(location.state.exemplaireId, false);
             }
         };
-        initFromLibrary();
-    }, [location.state]);
+        init();
+    }, [id, location.state]);
 
     const fetchAvailableBooks = async () => {
         setLibraryLoading(true);
@@ -184,10 +215,24 @@ export default function PublishAd() {
                 console.log(`--- ${key}:`, value, '---');
             }
 
-            await bookApi.create(data);
-            
-            setIsPublishing(false);
-            toast.success("Annonce en cours de traitement, merci de patienter s'il vous plaît.");
+            if (isEditMode) {
+                // For edit, we don't support file upload in this simple version
+                // but we send the JSON data
+                const updateData = {
+                    typeEchange: formData.typeEchange,
+                    prixVente: formData.prixVente || 0,
+                    dureePret: formData.dureePret,
+                    caution: formData.caution,
+                    description: formData.description,
+                    etat: formData.etat,
+                    exemplaireId: formData.exemplaireId
+                };
+                await bookApi.update(id, updateData);
+                toast.success("Annonce mise à jour avec succès !");
+            } else {
+                await bookApi.create(data);
+                toast.success("Annonce en cours de traitement, merci de patienter s'il vous plaît.");
+            }
             setShowSuccess(true);
             
             // Redirect automatically after showing confetti for a few seconds
@@ -294,8 +339,8 @@ export default function PublishAd() {
 
                 {/* ====== HEADER ====== */}
                 <div className={styles.header}>
-                    <h1 className={styles.title}>Créer une Annonce</h1>
-                    <p className={styles.subtitle}>Processus optimisé en 3 étapes (Manuel → Exemplaire → Offre)</p>
+                    <h1 className={styles.title}>{isEditMode ? 'Modifier votre Annonce' : 'Créer une Annonce'}</h1>
+                    <p className={styles.subtitle}>{isEditMode ? 'Mettez à jour les détails de votre offre' : 'Processus optimisé en 3 étapes (Manuel → Exemplaire → Offre)'}</p>
                 </div>
 
                 {/* ====== MAIN FORM COLUMN ====== */}
@@ -607,7 +652,7 @@ export default function PublishAd() {
                         ) : (
                             <button className={`${styles.btnPrimary} ${styles.btnPublish}`} onClick={handlePublish} disabled={isPublishing}>
                                 {isPublishing ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />} 
-                                {isPublishing ? 'Création...' : 'Publier l\'Annonce'}
+                                {isPublishing ? 'Enregistrement...' : (isEditMode ? 'Mettre à jour' : 'Publier l\'Annonce')}
                             </button>
                         )}
                     </div>

@@ -50,16 +50,24 @@ export default function StudentHeader() {
         return () => clearInterval(interval);
     }, [userId]);
 
-    const handleNotifClick = () => {
-        if (!showNotifMenu) {
-            fetchNotifications();
-            // Mark as read after opening
-            if (unreadCount > 0) {
-                notificationApi.markAllAsRead(userId).then(() => setUnreadCount(0));
+    const handleNotifItemClick = async (notif) => {
+        if (!notif.is_read) {
+            try {
+                await notificationApi.markRead(notif.id);
+                setUnreadCount(prev => Math.max(0, prev - 1));
+            } catch (error) {
+                console.error('Error marking as read:', error);
             }
         }
-        setShowNotifMenu(!showNotifMenu);
-        setShowProfileMenu(false);
+
+        setShowNotifMenu(false);
+
+        if (notif.target_url) {
+            navigate(notif.target_url);
+        } else {
+            // Default to dashboard
+            navigate('/student-dashboard');
+        }
     };
 
     const handleLogout = () => {
@@ -81,7 +89,11 @@ export default function StudentHeader() {
                     </button>
 
                     <div className={styles.notifWrapper}>
-                        <button className={`${styles.notifBtn} ${showNotifMenu ? styles.active : ''}`} onClick={handleNotifClick}>
+                        <button className={`${styles.notifBtn} ${showNotifMenu ? styles.active : ''}`} onClick={() => {
+                            if (!showNotifMenu) fetchNotifications();
+                            setShowNotifMenu(!showNotifMenu);
+                            setShowProfileMenu(false);
+                        }}>
                             <Bell size={20} />
                             {unreadCount > 0 && (
                                 <span className={styles.notifBadge}>{unreadCount > 9 ? '9+' : unreadCount}</span>
@@ -98,7 +110,12 @@ export default function StudentHeader() {
                                         <div className={styles.emptyNotif}>Aucune notification</div>
                                     ) : (
                                         notifications.map(notif => (
-                                            <div key={notif.id} className={`${styles.notifItem} ${!notif.is_read ? styles.notifUnread : ''}`}>
+                                            <div 
+                                                key={notif.id} 
+                                                className={`${styles.notifItem} ${!notif.is_read ? styles.notifUnread : ''}`}
+                                                onClick={() => handleNotifItemClick(notif)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
                                                 <div className={styles.notifIcon}>
                                                     {NOTIF_ICONS[notif.type] || <Info size={16} />}
                                                 </div>

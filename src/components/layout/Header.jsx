@@ -198,9 +198,14 @@ export default function Header() {
                                                         await notificationApi.markRead(n.id);
                                                         setUnreadCount(prev => Math.max(0, prev - 1));
                                                     }
+                                                    if (n.target_url) {
+                                                        navigate(n.target_url);
+                                                    } else if (n.type === 'PLAINTE') {
+                                                        navigate('/admin/moderation');
+                                                    } else {
+                                                        navigate(user?.role === 'ADMIN' ? '/admin' : '/student-dashboard');
+                                                    }
                                                     setShowNotifications(false);
-                                                    if (n.type === 'PLAINTE') navigate('/admin/moderation');
-                                                    else navigate('/admin/annonces');
                                                 }}
                                             >
                                                 <div className={styles.notifIcon}>

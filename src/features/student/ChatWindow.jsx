@@ -174,12 +174,15 @@ export default function ChatWindow() {
             setIsCodLoading(true);
             const partner = getPartner(selectedConversation);
             
+            const isLoan = selectedConversation.annonce_type === 'PRET';
+            
             await transactionApi.create({
                 annonce_id: selectedConversation.annonce_id,
                 seller_id: partner.id,
-                amount: selectedConversation.annonce_prix,
+                amount: isLoan ? 0 : selectedConversation.annonce_prix,
                 meeting_point: codData.meeting_point,
-                meeting_date: codData.meeting_date
+                meeting_date: codData.meeting_date,
+                return_date: isLoan ? codData.return_date : null
             });
 
             toast.success('Demande d\'achat envoyée !');
@@ -187,13 +190,16 @@ export default function ChatWindow() {
             
             // Also notify in chat with specialized type
             await conversationApi.sendMessage(selectedConversation.id, {
-                text: `J'ai envoyé une proposition d'achat officielle pour "${selectedConversation.book_title}".`,
+                text: isLoan 
+                    ? `J'ai envoyé une proposition d'emprunt officielle pour "${selectedConversation.book_title}".`
+                    : `J'ai envoyé une proposition d'achat officielle pour "${selectedConversation.book_title}".`,
                 type: 'transaction_proposal',
                 appointmentDetails: {
                     book_title: selectedConversation.book_title,
-                    amount: selectedConversation.annonce_prix,
+                    amount: isLoan ? 0 : selectedConversation.annonce_prix,
                     meeting_point: codData.meeting_point,
-                    meeting_date: codData.meeting_date
+                    meeting_date: codData.meeting_date,
+                    isLoan: isLoan
                 }
             });
             
@@ -209,6 +215,34 @@ export default function ChatWindow() {
             toast.error(error.response?.data?.error || 'Erreur lors de la demande d\'achat');
         } finally {
             setIsCodLoading(false);
+        }
+    };
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file || !selectedConversation) return;
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            toast.loading('Envoi de l\'image...', { id: 'image-upload' });
+            await conversationApi.sendImage(selectedConversation.id, formData);
+            toast.success('Image envoyée !', { id: 'image-upload' });
+            
+            // Refresh messages
+            const response = await conversationApi.getMessages(selectedConversation.id);
+            setMessages(prev => {
+                const newMessages = response.data;
+                const combined = [...prev, ...newMessages];
+                const unique = Array.from(new Map(combined.map(m => [m.id, m])).values());
+                return unique.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            });
+        } catch (error) {
+            console.error('Failed to upload image:', error);
+            toast.error('Erreur lors de l\'envoi de l\'image', { id: 'image-upload' });
+        } finally {
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -330,8 +364,9 @@ export default function ChatWindow() {
                                     <p>{selectedConversation.annonce_prix} DH</p>
                                 </div>
                                 {isBuyer && (
-                                    <button className={styles.btnCodAction} onClick={() => setShowCodModal(true)}>
-                                        <ShoppingCart size={14} /> Acheter (COD)
+                                    <button className={styles.btnCodAction} onClick={() => setShowCodModal(true)} style={{ background: selectedConversation.annonce_type === 'PRET' ? 'var(--gradient-pret)' : 'var(--gradient-vente)' }}>
+                                        {selectedConversation.annonce_type === 'PRET' ? <Clock size={14} /> : <ShoppingCart size={14} />}
+                                        {selectedConversation.annonce_type === 'PRET' ? 'Emprunter (Prêt)' : 'Acheter (COD)'}
                                     </button>
                                 )}
                             </div>
@@ -369,8 +404,8 @@ export default function ChatWindow() {
                                                 {isAppointment && metadata ? (
                                                     <div className={`${styles.appointmentCardMsg} ${isMe ? styles.apMe : styles.apThem}`}>
                                                         <div className={styles.apHeader}>
-                                                            <ShoppingCart size={18} />
-                                                            <span>Proposition d'achat (COD)</span>
+                                                            {metadata.isLoan ? <Clock size={18} /> : <ShoppingCart size={18} />}
+                                                            <span>{metadata.isLoan ? "Proposition d'emprunt" : "Proposition d'achat (COD)"}</span>
                                                         </div>
                                                         <div className={styles.apBody}>
                                                             <p className={styles.apTargetBook}><strong>{metadata.book}</strong></p>
@@ -398,12 +433,14 @@ export default function ChatWindow() {
                                                     <div className={`${styles.transactionCardMsg} ${isMe ? styles.trMe : styles.trThem}`}>
                                                         <div className={styles.trHeader}>
                                                             <ShieldCheck size={16} />
-                                                            <span>Transaction Officielle (COD)</span>
+                                                            <span>{metadata.isLoan ? 'Emprunt Officiel' : 'Transaction Officielle (COD)'}</span>
                                                         </div>
                                                         <div className={styles.trBody}>
-                                                            <div className={styles.trTargetBook}>PROPOSITION D'ACHAT POUR :</div>
+                                                            <div className={styles.trTargetBook}>{metadata.isLoan ? "PROPOSITION D'EMPRUNT POUR :" : "PROPOSITION D'ACHAT POUR :"}</div>
                                                             <div className={styles.trBookTitle}>{metadata.book_title || metadata.book}</div>
-                                                            <div className={styles.trPrice}>{metadata.amount || selectedConversation.annonce_prix} <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}>DH</span></div>
+                                                            <div className={styles.trPrice}>
+                                                                {metadata.isLoan ? 'Prêt Gratuit' : <>{metadata.amount || selectedConversation.annonce_prix} <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}>DH</span></>}
+                                                            </div>
                                                             <div className={styles.apDetails}>
                                                                 <span><Calendar size={14} /> {new Date(metadata.meeting_date).toLocaleString()}</span>
                                                                 <span><MapPin size={14} /> {metadata.meeting_point}</span>
@@ -430,8 +467,17 @@ export default function ChatWindow() {
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <div className={`${styles.bubble} ${isMe ? styles.bubbleMe : styles.bubbleThem}`}>
-                                                        {msg.message_text}
+                                                    <div className={`${styles.bubble} ${isMe ? styles.bubbleMe : styles.bubbleThem} ${msg.message_type === 'IMAGE' ? styles.bubbleImage : ''}`}>
+                                                        {msg.message_type === 'IMAGE' ? (
+                                                            <img 
+                                                                src={getFullImageUrl(msg.message_text)} 
+                                                                alt="Image partagée" 
+                                                                className={styles.chatImage}
+                                                                onClick={() => window.open(getFullImageUrl(msg.message_text), '_blank')}
+                                                            />
+                                                        ) : (
+                                                            msg.message_text
+                                                        )}
                                                         <span className={styles.msgTime}>
                                                             {new Date(msg.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
                                                         </span>
@@ -446,10 +492,30 @@ export default function ChatWindow() {
                         </div>
 
                         <form className={styles.chatInputArea} onSubmit={handleSendMessage}>
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                style={{ display: 'none' }} 
+                                onChange={handleImageUpload}
+                                accept="image/*"
+                            />
+                            
+                            <button 
+                                type="button" 
+                                className={styles.attachBtn} 
+                                onClick={() => fileInputRef.current?.click()}
+                                title="Envoyer une image"
+                            >
+                                <ImageIcon size={20} />
+                            </button>
+
                             {isBuyer && selectedConversation.book_title && (
-                                <button type="button" className={`${styles.attachBtn} ${styles.btnCodActionInput}`} onClick={() => setShowCodModal(true)}>
-                                    <ShoppingCart size={20} />
-                                    <span>Acheter (COD)</span>
+                                <button type="button" className={`${styles.attachBtn} ${styles.btnCodActionInput}`} 
+                                    onClick={() => setShowCodModal(true)}
+                                    style={{ background: selectedConversation.annonce_type === 'PRET' ? 'rgba(59,130,246,0.1)' : 'rgba(234,179,8,0.1)', color: selectedConversation.annonce_type === 'PRET' ? '#2563eb' : '#ca8a04' }}
+                                >
+                                    {selectedConversation.annonce_type === 'PRET' ? <Clock size={20} /> : <ShoppingCart size={20} />}
+                                    <span>{selectedConversation.annonce_type === 'PRET' ? 'Emprunter' : 'Acheter'}</span>
                                 </button>
                             )}
 
@@ -475,12 +541,15 @@ export default function ChatWindow() {
                                         exit={{ opacity: 0, scale: 0.9, y: 20 }}>
                                         <button className={styles.modalClose} onClick={() => setShowCodModal(false)}><X size={20} /></button>
                                         <div className={styles.modalBody}>
-                                            <div className={styles.modalIcon} style={{ background: 'var(--gradient-vente)', width: 60, height: 60, borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: 'white' }}>
-                                                <ShieldCheck size={32} />
+                                            <div className={styles.modalIcon} style={{ background: selectedConversation.annonce_type === 'PRET' ? 'var(--gradient-pret)' : 'var(--gradient-vente)', width: 60, height: 60, borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: 'white' }}>
+                                                {selectedConversation.annonce_type === 'PRET' ? <Clock size={32} /> : <ShieldCheck size={32} />}
                                             </div>
-                                            <h3 style={{ textAlign:'center', marginBottom:'0.5rem' }}>Acheter ce manuel</h3>
+                                            <h3 style={{ textAlign:'center', marginBottom:'0.5rem' }}>{selectedConversation.annonce_type === 'PRET' ? 'Emprunter ce manuel' : 'Acheter ce manuel'}</h3>
                                             <p style={{ textAlign:'center', color:'var(--text-secondary)', fontSize:'0.9rem', marginBottom:'1.5rem' }}>
-                                                Vous allez proposer un achat en espèces de <strong>{selectedConversation.annonce_prix} DH</strong> pour <strong>"{selectedConversation.book_title}"</strong>.
+                                                {selectedConversation.annonce_type === 'PRET' 
+                                                    ? <>Vous allez proposer d'emprunter <strong>"{selectedConversation.book_title}"</strong>.</>
+                                                    : <>Vous allez proposer un achat en espèces de <strong>{selectedConversation.annonce_prix} DH</strong> pour <strong>"{selectedConversation.book_title}"</strong>.</>
+                                                }
                                             </p>
 
                                             <div className={styles.formGroup}>
@@ -493,11 +562,18 @@ export default function ChatWindow() {
                                                 <input type="datetime-local"
                                                     value={codData.meeting_date} onChange={e => setCodData({ ...codData, meeting_date: e.target.value })} />
                                             </div>
+                                            {selectedConversation.annonce_type === 'PRET' && (
+                                                <div className={styles.formGroup}>
+                                                    <label><Calendar size={14} /> Date de retour prévue</label>
+                                                    <input type="date"
+                                                        value={codData.return_date} onChange={e => setCodData({ ...codData, return_date: e.target.value })} />
+                                                </div>
+                                            )}
                                         </div>
                                         <div className={styles.modalFooter}>
                                             <button className={styles.btnCancel} onClick={() => setShowCodModal(false)}>Annuler</button>
                                             <button className={styles.btnSubmit} onClick={handleInitiateCodFromChat} disabled={isCodLoading}>
-                                                {isCodLoading ? <Loader2 size={18} className={styles.spin} /> : 'Confirmer l\'achat'}
+                                                {isCodLoading ? <Loader2 size={18} className={styles.spin} /> : (selectedConversation.annonce_type === 'PRET' ? 'Confirmer l\'emprunt' : 'Confirmer l\'achat')}
                                             </button>
                                         </div>
                                     </motion.div>

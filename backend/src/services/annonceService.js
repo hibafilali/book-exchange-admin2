@@ -33,10 +33,11 @@ class AnnonceService {
                 const userId = annonce.exemplaire.proprietaire.id;
                 const titre = annonce.exemplaire.ouvrage.titre || 'Votre annonce';
                 
+                const targetUrl = '/student-dashboard';
                 if (status === 'ACTIF') {
-                    notificationRepository.create(userId, 'Annonce validée', `Félicitations, votre annonce pour "${titre}" a été approuvée et publiée.`, 'SUCCESS');
+                    notificationRepository.create(userId, 'Annonce validée', `Félicitations, votre annonce pour "${titre}" a été approuvée et publiée.`, 'SUCCESS', targetUrl);
                 } else if (status === 'REJETEE') {
-                    notificationRepository.create(userId, 'Annonce refusée', `Votre annonce pour "${titre}" n'a pas été validée par la modération.`, 'ERROR');
+                    notificationRepository.create(userId, 'Annonce refusée', `Votre annonce pour "${titre}" n'a pas été validée par la modération.`, 'ERROR', targetUrl);
                 }
             }).catch(console.error);
         }
@@ -55,6 +56,18 @@ class AnnonceService {
 
     async deleteAnnonce(id) {
         return await annonceRepository.updateStatus(id, 'SUPPRIMEE');
+    }
+
+    async updateAnnonce(id, data, userId) {
+        const annonce = await annonceRepository.findById(id);
+        if (!annonce) throw new Error('Annonce not found');
+        
+        // Verify owner
+        if (annonce.exemplaire.proprietaire.id !== userId) {
+            throw new Error('Unauthorized to update this advertisement');
+        }
+
+        return await annonceRepository.update(id, data);
     }
 
     async getMaxPrice() {
